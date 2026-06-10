@@ -1,0 +1,10 @@
+def calculate_severity(area):
+
+    if area < 5:
+        return "Mild"
+
+    elif area < 15:
+        return "Moderate"
+
+    else:
+        return "Severe"

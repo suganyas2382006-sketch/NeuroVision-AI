@@ -1,0 +1,7 @@
+<h2>Analysis Result</h2>
+
+<p>Tumor Type: {{ tumor }}</p>
+
+<p>Severity: {{ severity }}</p>
+
+<p>Confidence: {{ confidence }}</p>

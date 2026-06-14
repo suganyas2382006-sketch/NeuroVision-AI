@@ -1,7 +1,109 @@
-body{
-    font-family: Arial;
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #000054;
+  color: white;
+  animation: fadeIn 0.6s ease-in;
 }
 
-h1{
-    color: blue;
+.container {
+  max-width: 900px;
+  margin: auto;
+  padding: 50px 20px;
+  text-align: center;
+  animation: slideUp 0.6s ease;
+}
+
+.title {
+  font-size: 38px;
+  margin-bottom: 10px;
+}
+
+.subtitle {
+  color: #cfcfcf;
+  margin-bottom: 30px;
+}
+
+.card {
+  background: rgba(255,255,255,0.08);
+  padding: 25px;
+  margin: 20px 0;
+  border-radius: 12px;
+  transition: 0.3s;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+button {
+  background: #00c8ff;
+  color: black;
+  border: none;
+  padding: 10px 18px;
+  margin: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+button:hover {
+  transform: scale(1.05);
+}
+
+img {
+  border-radius: 10px;
+  margin-top: 10px;
+  animation: pop 0.5s ease;
+}
+
+.fade {
+  opacity: 0;
+  animation: fadeText 0.5s forwards;
+}
+
+.fade:nth-child(1){animation-delay:0.1s;}
+.fade:nth-child(2){animation-delay:0.2s;}
+.fade:nth-child(3){animation-delay:0.3s;}
+.fade:nth-child(4){animation-delay:0.4s;}
+
+.scanning {
+  position: relative;
+  overflow: hidden;
+}
+
+.scanning::after {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: -100%;
+  left: 0;
+  background: linear-gradient(to bottom, transparent, rgba(0,200,255,0.2), transparent);
+  animation: scan 2s infinite;
+}
+
+@keyframes fadeIn {
+  from {opacity: 0;}
+  to {opacity: 1;}
+}
+
+@keyframes slideUp {
+  from {transform: translateY(20px); opacity: 0;}
+  to {transform: translateY(0); opacity: 1;}
+}
+
+@keyframes pop {
+  from {transform: scale(0.9); opacity: 0;}
+  to {transform: scale(1); opacity: 1;}
+}
+
+@keyframes fadeText {
+  to {opacity: 1;}
+}
+
+@keyframes scan {
+  0% {top: -100%;}
+  100% {top: 100%;}
 }

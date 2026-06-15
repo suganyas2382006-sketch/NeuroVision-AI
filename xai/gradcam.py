@@ -1,5 +1,13 @@
-def generate_heatmap(model,image):
+import os
 
-    # Generate GradCAM
+def generate_gradcam(image_path):
 
-    return heatmap
+    # Dummy heatmap generation (replace with real Grad-CAM later)
+    heatmap_path = image_path.replace("uploads", "heatmaps")
+
+    try:
+        os.system(f"cp {image_path} {heatmap_path}")
+    except:
+        pass
+
+    return heatmap_path

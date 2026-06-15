@@ -1,10 +1,7 @@
-def calculate(area):
-
-    if area < 5:
-        return "Mild"
-
-    elif area < 15:
-        return "Moderate"
-
+def get_severity(confidence):
+    if confidence < 40:
+        return "Low"
+    elif confidence < 70:
+        return "Medium"
     else:
-        return "Severe"
+        return "High"

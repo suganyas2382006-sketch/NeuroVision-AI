@@ -1,7 +1,30 @@
-<h2>Analysis Result</h2>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Result</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
 
-<p>Tumor Type: {{ tumor }}</p>
+<body>
 
-<p>Severity: {{ severity }}</p>
+<div class="container">
 
-<p>Confidence: {{ confidence }}</p>
+  <h1>Result</h1>
+
+  <img src="{{ url_for('static', filename='uploads/' + image) }}" width="300">
+
+  <h2>{{ prediction }}</h2>
+
+  <p>Confidence: {{ confidence }}%</p>
+
+  <p>Severity: {{ severity }}</p>
+
+  <br>
+
+  <a href="/history"><button>View History</button></a>
+  <a href="/"><button>Back</button></a>
+
+</div>
+
+</body>
+</html>

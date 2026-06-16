@@ -4,9 +4,10 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Tabl
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 
-def generate_pdf_report(filename, prediction, confidence, original_img_path, heatmap_img_path, logo_path):
+def generate_pdf_report(filename, prediction, confidence, severity, risk, original_img_path, heatmap_img_path, logo_path):
     """
-    Builds a structured medical PDF presentation sheet using ReportLab flowables.
+    Constructs an absolute, structured medical document file stream using ReportLab flowables.
+    Enforces a strict 1cm x 1cm scaling constraint on branding artwork on paper.
     """
     doc = SimpleDocTemplate(filename, pagesize=letter, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
     story = []
@@ -14,7 +15,7 @@ def generate_pdf_report(filename, prediction, confidence, original_img_path, hea
     
     title_style = ParagraphStyle(
         'DocTitle', parent=styles['Heading1'], fontName='Helvetica-Bold',
-        fontSize=24, textColor=colors.HexColor('#000054'), spaceAfter=4
+        fontSize=22, textColor=colors.HexColor('#000054'), spaceAfter=2
     )
     section_heading = ParagraphStyle(
         'SectionHeading', parent=styles['Heading2'], fontName='Helvetica-Bold',
@@ -26,13 +27,20 @@ def generate_pdf_report(filename, prediction, confidence, original_img_path, hea
 
     header_data = []
     if os.path.exists(logo_path):
-        img_logo = Image(logo_path, width=45, height=45)
-        header_data.append([img_logo, Paragraph("NeuroVision AI Report<br/><font size=9 color='#666666'>Clinical Diagnostic Assistant Engine</font>", title_style)])
+        # TRUE PHYSICAL 1 CM MEASUREMENT: 1 cm equals exactly 28.35 grid boundary points in ReportLab layout structures
+        img_logo = Image(logo_path, width=28.35, height=28.35)
+        header_data.append([
+            img_logo, 
+            Paragraph("NeuroVision AI Report<br/><font size=8.5 color='#666666'>Clinical Diagnostic Assistant Engine</font>", title_style)
+        ])
+        header_table = Table(header_data, colWidths=[38, 472])
     else:
-        header_data.append([Paragraph("NeuroVision AI Diagnostic Report", title_style)])
+        header_table = Table([[Paragraph("NeuroVision AI Diagnostic Report", title_style)]], colWidths=[510])
         
-    header_table = Table(header_data, colWidths=[55, 455] if os.path.exists(logo_path) else [510])
-    header_table.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('BOTTOMPADDING', (0,0), (-1,-1), 8)]))
+    header_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'), 
+        ('BOTTOMPADDING', (0,0), (-1,-1), 6)
+    ]))
     story.append(header_table)
     
     line_table = Table([[""]], colWidths=[530], rowHeights=[2])
@@ -41,7 +49,12 @@ def generate_pdf_report(filename, prediction, confidence, original_img_path, hea
     story.append(Spacer(1, 10))
 
     story.append(Paragraph("Diagnostic Classification Summary", section_heading))
-    summary_text = f"<b>Predicted Classification Class:</b> {prediction}<br/><b>System Analysis Confidence:</b> {confidence}%"
+    summary_text = (
+        f"<b>Predicted Classification Class:</b> {prediction}<br/>"
+        f"<b>System Analysis Confidence:</b> {confidence}%<br/>"
+        f"<b>Calculated Progression Stage:</b> {severity}<br/>"
+        f"<b>Risk Evaluation Flag:</b> {risk.upper()}"
+    )
     story.append(Paragraph(summary_text, body_style))
     story.append(Spacer(1, 15))
 
@@ -54,7 +67,11 @@ def generate_pdf_report(filename, prediction, confidence, original_img_path, hea
         img_matrix_data.append([Paragraph("Source MRI Structural Scan", body_style), Paragraph("Grad-CAM Activation Map Area", body_style)])
         
         image_table = Table(img_matrix_data, colWidths=[260, 260])
-        image_table.setStyle(TableStyle([('ALIGN', (0,0), (-1,-1), 'CENTER'), ('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('TOPPADDING', (0,1), (-1,1), 4)]))
+        image_table.setStyle(TableStyle([
+            ('ALIGN', (0,0), (-1,-1), 'CENTER'), 
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'), 
+            ('TOPPADDING', (0,1), (-1,1), 4)
+        ]))
         story.append(image_table)
         
     story.append(Spacer(1, 20))

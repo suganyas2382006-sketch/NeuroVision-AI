@@ -14,16 +14,26 @@
             <img src="/static/Images/IMG_20260614_200114.png" alt="NeuroVision AI Logo" class="logo">
         </div>
 
-        <div class="title fade">NeuroVision AI</div>
-        <div class="subtitle fade">Brain Tumor Detection & Explainable AI Engine</div>
+        <h1 class="title fade">NeuroVision AI</h1>
+        <p class="subtitle fade">Brain Tumor Detection & Explainable AI Engine</p>
 
-        <div class="card scanning fade">
+        <div class="card fade">
             <h3>Upload MRI Scan</h3>
+            
             <form action="/upload" method="POST" enctype="multipart/form-data">
-                <input type="file" name="image" id="mriFile" accept="image/*" onchange="previewImage(event)" required>
-                <br><br>
-                <img id="preview" src="#" alt="MRI Preview" style="display: none; max-width: 100%; max-height: 300px; margin: 15px auto; border: 2px solid #00c8ff;">
-                <br>
+                
+                <div class="upload-zone">
+                    <label for="mriFile" class="custom-file-upload">
+                        <span class="upload-icon">📁</span>
+                        <span id="file-label-text">Choose MRI Image or Drag here</span>
+                    </label>
+                    <input type="file" name="image" id="mriFile" accept="image/*" onchange="previewImage(event)" required>
+                </div>
+
+                <div class="preview-container">
+                    <img id="preview" src="#" alt="MRI Preview" style="display: none; max-width: 100%; max-height: 300px; margin: 0 auto; border: 2px solid #00c8ff;">
+                </div>
+                
                 <button type="submit">Analyze Scan</button>
             </form>
         </div>

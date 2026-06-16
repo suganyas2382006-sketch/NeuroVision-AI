@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analysis Results</title>
+    <title>NeuroVision AI - Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
 </head>
@@ -14,27 +14,20 @@
             <img src="{{ url_for('static', filename='images/IMG_20260614_200114.png') }}" alt="NeuroVision AI Logo" class="logo">
         </div>
 
-        <div class="title fade">Analysis Output Summary</div>
-        <div class="subtitle fade">NeuroVision diagnostic identification details</div>
+        <div class="title fade">NeuroVision AI</div>
+        <div class="subtitle fade">Brain Tumor Detection & Explainable AI Engine</div>
 
-        <div class="card fade">
-            <h2>Classification Result: <span style="color: #00c8ff;">{{ prediction }}</span></h2>
-            <h3>System Confidence: <span style="color: #00c8ff;">{{ confidence }}%</span></h3>
+        <div class="card scanning fade">
+            <h3>Upload MRI Scan</h3>
+            <form action="/upload" method="POST" enctype="multipart/form-data">
+                <input type="file" name="image" id="mriFile" accept="image/*" onchange="previewImage(event)" required>
+                <br><br>
+                <img id="preview" src="#" alt="MRI Preview" style="display: none; max-width: 100%; max-height: 300px; margin: 15px auto; border: 2px solid #00c8ff;">
+                <br>
+                <button type="submit">Analyze Scan</button>
+            </form>
         </div>
 
-        <div class="card fade" style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 20px;">
-            <div style="flex: 1; min-width: 250px;">
-                <h4>Submitted MRI Image</h4>
-                <img src="{{ url_for('static', filename=image) }}" alt="Source Scan File" style="max-width: 100%; height: auto; max-height: 300px; border: 2px solid rgba(255,255,255,0.2);">
-            </div>
-            <div style="flex: 1; min-width: 250px;">
-                <h4>Grad-CAM Target Heatmap</h4>
-                <img src="{{ url_for('static', filename=heatmap_image) }}" alt="AI Visual Localization Map" style="max-width: 100%; height: auto; max-height: 300px; border: 2px solid #00c8ff;">
-            </div>
-        </div>
-
-        <br>
-        <a href="/"><button type="button">Process Another Scan</button></a>
     </div>
 </body>
 </html>

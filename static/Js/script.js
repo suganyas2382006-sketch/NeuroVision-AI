@@ -1,19 +1,22 @@
-// Page loaded
 document.addEventListener("DOMContentLoaded", function () {
     console.log("NeuroVision AI Loaded");
 });
 
-// Preview MRI image before upload
 function previewImage(event) {
     const preview = document.getElementById("preview");
+    const selectedFile = event.target.files[0];
 
-    if (preview && event.target.files.length > 0) {
-        preview.src = URL.createObjectURL(event.target.files[0]);
+    if (preview && selectedFile) {
+        // Safe memory management: clear old blob pointer strings
+        if (preview.src && preview.src.startsWith("blob:")) {
+            URL.revokeObjectURL(preview.src);
+        }
+
+        preview.src = URL.createObjectURL(selectedFile);
         preview.style.display = "block";
     }
 }
 
-// Confirm report download
 function confirmDownload() {
     return confirm("Download Medical Report?");
 }

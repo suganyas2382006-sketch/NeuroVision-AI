@@ -1,8 +1,9 @@
+/* --- Global Body & Centering Layout --- */
 body {
   margin: 0;
-  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; /* Clean, modern font stack */
-  background: radial-gradient(circle at center, #00106a 0%, #000028 100%); /* Deep gradient for premium AI feel */
-  color: #ffffff;
+  font-family: Arial, sans-serif;
+  background: #000054;
+  color: white;
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -11,9 +12,11 @@ body {
   animation: fadeIn 0.6s ease-in;
 }
 
+/* Base Container (Constrained for laptop readability) */
 .container {
   width: 100%;
-  max-width: 540px; /* Reduced to keep the UI tight and focused */
+  max-width: 800px;
+  margin: auto;
   padding: 40px 20px;
   text-align: center;
   box-sizing: border-box;
@@ -21,7 +24,7 @@ body {
 }
 
 .logo-container {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   display: flex;
   justify-content: center;
 }
@@ -31,117 +34,161 @@ body {
   width: 1cm;
   height: 1cm;
   object-fit: contain;
-  filter: drop-shadow(0 0 8px rgba(0, 200, 255, 0.6)); /* Subtle glow */
 }
 
-.title {
-  font-size: 32px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-  margin: 0 0 8px 0;
-  background: linear-gradient(135deg, #ffffff 0%, #a5d8ff 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.subtitle {
-  font-size: 14px;
-  color: #8fa0dd; /* Softer, thematic blue-gray */
-  margin: 0 0 35px 0;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-
+/* --- Card Architecture --- */
 .card {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px); /* Premium glassmorphism effect */
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 40px 30px;
-  border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-  transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.3s ease;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 25px 30px;
+  margin: 20px 0;
+  border-radius: 12px;
+  box-sizing: border-box;
+  transition: transform 0.3s ease;
+  text-align: center;
 }
 
 .card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(0, 200, 255, 0.3);
+  transform: translateY(-5px);
 }
 
-/* Label styling to fix the default file upload appearance */
-.card p {
-  font-size: 16px;
-  font-weight: 500;
-  margin-top: 0;
-  margin-bottom: 20px;
-  color: #e2e8f0;
+.card-divider {
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 15px 0;
 }
 
-/* Optional tweak for your file input layout inside the card */
-input[type="file"] {
-  display: block;
-  margin: 0 auto 25px auto;
-  color: #a0aec0;
-  font-size: 14px;
+/* XAI Highlight Block Layout */
+.xai-card {
+  border-left: 4px solid #00c8ff;
+  text-align: left; /* Left-aligned for dense reading blocks */
 }
 
-button {
-  background: #00c8ff;
-  color: #000028;
-  border: none;
-  padding: 12px 28px;
-  font-size: 15px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  box-shadow: 0 4px 15px rgba(0, 200, 255, 0.3);
-  transition: all 0.2s ease;
+.xai-meta {
+  color: rgba(255, 255, 255, 0.7);
+  font-style: italic;
+  font-size: 0.9rem;
 }
 
-button:hover {
-  transform: scale(1.03);
-  background: #33d6ff;
-  box-shadow: 0 6px 20px rgba(0, 200, 255, 0.5);
+.xai-output {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 12px;
+  border-radius: 6px;
+  line-height: 1.5;
+  margin: 5px 0 0 0;
 }
 
-button:active {
-  transform: scale(0.98);
+/* --- Twin Column Grid Layout (Laptop View default) --- */
+.comparison-grid {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 20px;
 }
 
-img {
+.grid-column {
+  flex: 1;
+  min-width: 250px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Scan Image Constraints */
+.scan-img {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  max-height: 300px;
+  object-fit: contain;
+  margin-top: 10px;
   border-radius: 10px;
-  margin-top: 20px;
+  box-sizing: border-box;
   animation: pop 0.5s ease;
 }
 
-/* --- Animation keyframes remain unchanged for functionality --- */
-.fade {
-  opacity: 0;
-  animation: fadeText 0.5s forwards;
+.mri-source {
+  border: 2px solid rgba(255, 255, 255, 0.2);
 }
+
+.heatmap-output {
+  border: 2px solid #00c8ff;
+}
+
+/* --- Actions Alignment Row --- */
+.actions-row {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 25px;
+  margin-bottom: 30px;
+}
+
+.btn-pdf {
+  background: #ffffff;
+  color: #000054;
+  font-weight: bold;
+}
+
+
+/* ==========================================================================
+   📱 LAPTOP TO PHONE RESPONSIVE REALIGNMENT RULES
+   ========================================================================== */
+@media (max-width: 768px) {
+  .container {
+    padding: 25px 12px;
+  }
+
+  /* Expand card sizes cleanly to fill tiny mobile screen edges safely */
+  .card {
+    padding: 20px 16px !important;
+    margin: 15px 0 !important;
+    width: 100%;
+  }
+
+  /* Force side-by-side images to break cleanly down into full vertical stack rows */
+  .comparison-grid {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 25px !important;
+  }
+
+  .grid-column {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: none !important;
+  }
+
+  /* Keep image files centered and scaled inside mobile layout bounding walls */
+  .scan-img {
+    max-height: 260px !important;
+    margin: 10px auto 0 auto !important;
+  }
+
+  /* Stacks bottom buttons so they don't squash horizontally */
+  .actions-row {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px !important;
+    margin-top: 20px;
+    width: 100%;
+  }
+
+  .actions-row a,
+  .actions-row button {
+    width: 100%;
+    max-width: 290px;
+    margin: 0 !important;
+  }
+}
+
+/* --- Legacy Animations Setup (Unchanged) --- */
+.fade { opacity: 0; animation: fadeText 0.5s forwards; }
 .fade:nth-child(1) { animation-delay: 0.1s; }
 .fade:nth-child(2) { animation-delay: 0.2s; }
 .fade:nth-child(3) { animation-delay: 0.3s; }
 .fade:nth-child(4) { animation-delay: 0.4s; }
 
-.scanning {
-  position: relative;
-  overflow: hidden;
-}
-.scanning::after {
-  content: "";
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: -100%;
-  left: 0;
-  background: linear-gradient(to bottom, transparent, rgba(0,200,255,0.2), transparent);
-  animation: scan 2s infinite linear;
-}
-
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 @keyframes pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @keyframes fadeText { from { opacity: 0; } to { opacity: 1; } }
-@keyframes scan { 0% { top: -100%; } 100% { top: 100%; } }

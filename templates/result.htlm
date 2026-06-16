@@ -3,12 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analysis Results</title>
+    <title>NeuroVision AI - Analysis Results</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
 </head>
 <body>
     <div class="container">
+
+        <div class="logo-container fade">
+            <img src="{{ url_for('static', filename='images/IMG_20260614_200114.png') }}" alt="NeuroVision AI Logo" class="logo">
+        </div>
+
         <div class="title fade">Analysis Output Summary</div>
         <div class="subtitle fade">NeuroVision diagnostic identification details</div>
 
@@ -29,7 +34,13 @@
         </div>
 
         <br>
-        <a href="/"><button type="button">Process Another Scan</button></a>
+        <div style="display: flex; justify-content: center; gap: 15px;">
+            <a href="/download_report/{{ image.split('/')[-1] }}" onclick="return confirmDownload();">
+                <button type="button" style="background: #ffffff; color: #000054;">Download PDF Report</button>
+            </a>
+            <a href="/"><button type="button">Process Another Scan</button></a>
+        </div>
+
     </div>
 </body>
 </html>

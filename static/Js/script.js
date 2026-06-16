@@ -7,6 +7,7 @@ function previewImage(event) {
     const selectedFile = event.target.files[0];
 
     if (preview && selectedFile) {
+        // Clear active local blob assignments to protect systemic browser memory usage
         if (preview.src && preview.src.startsWith("blob:")) {
             URL.revokeObjectURL(preview.src);
         }

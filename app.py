@@ -113,3 +113,28 @@ def download_report(filename):
             if model is not None:
                 generate_gradcam(source_image_path, model, final_conv_layer_name="conv2d_1")
             else:
+                generate_simulated_heatmap(source_image_path)
+            mask_status = True
+        except Exception as e:
+            print(f"Error compiling heatmap asset on downstream download path: {e}")
+            heatmap_image_path = source_image_path
+            mask_status = False
+    else:
+        mask_status = True
+
+    severity_grade, risk_level, xai_justification = calculate_severity(result_text, confidence_score, mask_status)
+    
+    pdf_filename = f"report_{os.path.splitext(filename)[0]}.pdf"
+    pdf_output_path = os.path.join(app.config["UPLOAD_FOLDER"], pdf_filename)
+    
+    generate_pdf_report(
+        filename=pdf_output_path, prediction=result_text, confidence=confidence_score,
+        severity=severity_grade, risk=risk_level,
+        original_img_path=source_image_path, heatmap_img_path=heatmap_image_path, 
+        logo_path=logo_path, xai_report_text=xai_justification
+    )
+    
+    return send_file(pdf_output_path, as_attachment=True)
+
+if __name__ == "__main__":
+    app.run(debug=True)

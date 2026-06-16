@@ -5,7 +5,7 @@ from PIL import Image
 from flask import Flask, redirect, render_template, request, url_for, send_file
 from xai.gradcam import generate_gradcam
 from severity.pdf_generator import generate_pdf_report
-from severity.severity_analysis import calculate_severity  # Linked to your file
+from severity.severity_analysis import calculate_severity
 
 app = Flask(__name__)
 
@@ -57,15 +57,12 @@ def upload():
         result = labels[class_index]
         confidence = round(float(np.max(prediction)) * 100, 2)
     else:
-        # Static fallback parameters if model isn't found locally
         result = "Glioma"
         confidence = 94.25
 
-    # Run your severity logic calculations
     severity_grade, risk_level = calculate_severity(result, confidence)
 
     try:
-        # Note: Change 'conv2d_last' to match your model's exact final conv layer name if it throws an error
         heatmap_web_path = generate_gradcam(filepath, model, final_conv_layer_name="conv2d_last")
     except Exception as e:
         print(f"Grad-CAM error fallback activated: {e}")
@@ -86,7 +83,9 @@ def upload():
 def download_report(filename):
     source_image_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
     heatmap_image_path = os.path.join(app.config["UPLOAD_FOLDER"], "gradcam_" + filename)
-    logo_path = os.path.join(BASE_DIR, "static", "images", "IMG_20260614_200114.png")
+    
+    # CORRECTED LOGO PATH MAPPING: Looks directly into static folder root
+    logo_path = os.path.join(BASE_DIR, "static", "IMG_20260614_200114.png")
     
     if model:
         img = preprocess_image(source_image_path)

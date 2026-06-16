@@ -25,6 +25,7 @@ else:
     print("Warning: Model missing. Operating in fallback simulation mode.")
 
 labels = ["Glioma", "Meningioma", "Pituitary", "No Tumor"]
+# Points strictly to /static/upload inside your workspace folder structure
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "upload")
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -65,6 +66,7 @@ def upload():
     # INTEGRATED HEATMAP EXTRACTION SWITCH
     try:
         if model is not None:
+            # Generates image in static/upload/ and returns "upload/gradcam_filename.ext"
             heatmap_web_path = generate_gradcam(filepath, model, final_conv_layer_name="conv2d_1")
             mask_status = True
         else:
@@ -80,8 +82,8 @@ def upload():
 
     return render_template(
         "result.html",
-        image=f"upload/{file.filename}",
-        heatmap_image=heatmap_web_path,
+        image=f"upload/{file.filename}",          # Resolves to static/upload/filename
+        heatmap_image=heatmap_web_path,           # Resolves to static/upload/gradcam_filename
         prediction=result,
         confidence=confidence,
         severity=severity_grade,
@@ -111,28 +113,3 @@ def download_report(filename):
             if model is not None:
                 generate_gradcam(source_image_path, model, final_conv_layer_name="conv2d_1")
             else:
-                generate_simulated_heatmap(source_image_path)
-            mask_status = True
-        except Exception as e:
-            print(f"Error compiling heatmap asset on downstream download path: {e}")
-            heatmap_image_path = source_image_path
-            mask_status = False
-    else:
-        mask_status = True
-
-    severity_grade, risk_level, xai_justification = calculate_severity(result_text, confidence_score, mask_status)
-    
-    pdf_filename = f"report_{os.path.splitext(filename)[0]}.pdf"
-    pdf_output_path = os.path.join(app.config["UPLOAD_FOLDER"], pdf_filename)
-    
-    generate_pdf_report(
-        filename=pdf_output_path, prediction=result_text, confidence=confidence_score,
-        severity=severity_grade, risk=risk_level,
-        original_img_path=source_image_path, heatmap_img_path=heatmap_image_path, 
-        logo_path=logo_path, xai_report_text=xai_justification
-    )
-    
-    return send_file(pdf_output_path, as_attachment=True)
-
-if __name__ == "__main__":
-    app.run(debug=True)

@@ -1,87 +1,61 @@
 from flask import Flask, render_template, request, redirect, url_for
 import os
-import json
-from datetime import datetime
-
-from severity.logic import get_severity
-from xai.gradcam import generate_gradcam
+import numpy as np
+from PIL import Image
+import tensorflow as tf
 
 app = Flask(__name__)
 
-UPLOAD_FOLDER = "static/uploads"
-HEATMAP_FOLDER = "static/heatmaps"
-HISTORY_FILE = "instance/history.json"
+# Load model
+model = tf.keras.models.load_model("model/brain_tumor_model.h5")
 
+labels = ["Glioma", "Meningioma", "Pituitary", "No Tumor"]
+
+UPLOAD_FOLDER = "static/uploads"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(HEATMAP_FOLDER, exist_ok=True)
-os.makedirs("instance", exist_ok=True)
 
 
-def save_history(entry):
-    if not os.path.exists(HISTORY_FILE):
-        with open(HISTORY_FILE, "w") as f:
-            json.dump([], f)
-
-    with open(HISTORY_FILE, "r") as f:
-        data = json.load(f)
-
-    data.append(entry)
-
-    with open(HISTORY_FILE, "w") as f:
-        json.dump(data, f, indent=4)
+def preprocess_image(path):
+    img = Image.open(path).convert("RGB")
+    img = img.resize((128, 128))
+    img = np.array(img) / 255.0
+    img = np.expand_dims(img, axis=0)
+    return img
 
 
 @app.route("/")
-def index():
+def home():
     return render_template("index.html")
 
 
-@app.route("/upload")
+@app.route("/upload", methods=["GET", "POST"])
 def upload():
+    if request.method == "POST":
+        file = request.files["image"]
+
+        if file.filename == "":
+            return "No file selected"
+
+        filepath = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
+        file.save(filepath)
+
+        img = preprocess_image(filepath)
+        prediction = model.predict(img)
+
+        class_index = np.argmax(prediction)
+        result = labels[class_index]
+        confidence = float(np.max(prediction)) * 100
+
+        return render_template(
+            "result.html",
+            image=file.filename,
+            prediction=result,
+            confidence=round(confidence, 2)
+        )
+
     return render_template("upload.html")
-
-
-@app.route("/predict", methods=["POST"])
-def predict():
-
-    file = request.files["image"]
-
-    if file.filename == "":
-        return "No file selected"
-
-    filepath = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
-    file.save(filepath)
-
-    # -------------------------
-    # FAKE MODEL PREDICTION (replace with ML model later)
-    # -------------------------
-    prediction = "Tumor Detected"
-    confidence = 92.5
-
-    severity = get_severity(confidence)
-
-    # GradCAM (dummy for now)
-    heatmap_path = generate_gradcam(filepath)
-
-    # Save history
-    save_history({
-        "time": str(datetime.now()),
-        "image": file.filename,
-        "prediction": prediction,
-        "confidence": confidence,
-        "severity": severity
-    })
-
-    return render_template(
-        "result.html",
-        image=file.filename,
-        prediction=prediction,
-        confidence=confidence,
-        severity=severity,
-        heatmap=heatmap_path
-    )
 
 
 @app.route("/heatmap")
@@ -92,18 +66,6 @@ def heatmap():
 @app.route("/xai")
 def xai():
     return render_template("xai.html")
-
-
-@app.route("/history")
-def history():
-
-    if os.path.exists(HISTORY_FILE):
-        with open(HISTORY_FILE, "r") as f:
-            data = json.load(f)
-    else:
-        data = []
-
-    return render_template("history.html", history=data)
 
 
 if __name__ == "__main__":

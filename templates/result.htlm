@@ -20,6 +20,19 @@
         <div class="card fade">
             <h2>Classification Result: <span style="color: #00c8ff;">{{ prediction }}</span></h2>
             <h3>System Confidence: <span style="color: #00c8ff;">{{ confidence }}%</span></h3>
+            
+            <hr style="border-color: rgba(255,255,255,0.1); margin: 15px 0;">
+            
+            <h3>Calculated Severity: <span style="color: #ffcc00;">{{ severity }}</span></h3>
+            <h3>Risk Assessment Class: 
+                {% if risk == 'Critical' %}
+                    <span style="color: #ff3333; font-weight: bold;">CRITICAL ALERT</span>
+                {% elif risk == 'Moderate' %}
+                    <span style="color: #ffaa00; font-weight: bold;">MODERATE MONITORING</span>
+                {% else %}
+                    <span style="color: #33cc33; font-weight: bold;">LOW RISK BASELINE</span>
+                {% endif %}
+            </h3>
         </div>
 
         <div class="card fade" style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 20px;">

@@ -84,8 +84,8 @@ def download_report(filename):
     source_image_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
     heatmap_image_path = os.path.join(app.config["UPLOAD_FOLDER"], "gradcam_" + filename)
     
-    # CORRECTED LOGO PATH MAPPING: Looks directly into static folder root
-    logo_path = os.path.join(BASE_DIR, "static", "IMG_20260614_200114.png")
+    # CORRECTED LOGO PATH: Points straight to the capital "Images" folder
+    logo_path = os.path.join(BASE_DIR, "static", "Images", "IMG_20260614_200114.png")
     
     if model:
         img = preprocess_image(source_image_path)

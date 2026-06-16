@@ -6,13 +6,21 @@ import matplotlib
 matplotlib.use('Agg')  # Force non-interactive backend so Flask doesn't crash on threads
 import matplotlib.pyplot as plt
 
-def generate_gradcam(img_path, model, final_conv_layer_name="conv2d_1", intensity=0.4, res=128):
+def generate_gradcam(img_path, model, final_conv_layer_name=None, intensity=0.4, res=128):
     """
     Computes Gradient-weighted Class Activation Mapping (Grad-CAM) and
-    blends it with the original image using Matplotlib.
+    blends it with the original image using Matplotlib. Automatically 
+    detects the final convolutional layer if none is specified.
     """
     if model is None:
         raise ValueError("Grad-CAM Engine Error: Target TensorFlow model object is uninitialized.")
+
+    # AUTOMATIC LAYER DETECTION: Finds the last convolutional layer if name isn't a perfect match
+    if final_conv_layer_name is None or not any(l.name == final_conv_layer_name for l in model.layers):
+        conv_layers = [layer.name for layer in model.layers if "conv" in layer.name.lower()]
+        if not conv_layers:
+            raise ValueError("Grad-CAM Engine Error: No convolutional layers detected in this model architecture.")
+        final_conv_layer_name = conv_layers[-1]  # Safely grabs the very last conv layer found
 
     # 1. Image Preprocessing Pipelines
     img = tf.keras.preprocessing.image.load_img(img_path, target_size=(res, res))
@@ -61,7 +69,7 @@ def generate_gradcam(img_path, model, final_conv_layer_name="conv2d_1", intensit
     plt.savefig(output_path, pad_inches=0, bbox_inches='tight')
     plt.close(fig)
 
-    # Returns "upload/gradcam_filename.png" cleanly to Flask
+    # Returns path cleanly to Flask matching your exact directory layout
     return "upload/" + "gradcam_" + base_filename
 
 
@@ -79,7 +87,7 @@ def generate_simulated_heatmap(img_path, intensity=0.4, res=128):
     # Create an artificial spatial grid centering activation density rules
     x, y = np.meshgrid(np.linspace(-1, 1, res), np.linspace(-1, 1, res))
     d = np.sqrt(x*x + y*y)
-    heatmap = np.maximum(0, 1.0 - d * 1.5)  # Creates a localized heat signature spot
+    heatmap = np.maximum(0, 1.0 - d * 1.5)
 
     fig, ax = plt.subplots(figsize=(4, 4), dpi=res)
     fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
@@ -91,5 +99,4 @@ def generate_simulated_heatmap(img_path, intensity=0.4, res=128):
     plt.savefig(output_path, pad_inches=0, bbox_inches='tight')
     plt.close(fig)
 
-    # Returns "upload/gradcam_filename.png" cleanly to Flask
     return "upload/" + "gradcam_" + base_filename

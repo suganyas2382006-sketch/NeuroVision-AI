@@ -39,7 +39,7 @@ def generate_gradcam(img_path, model, final_conv_layer_name="conv2d_1", intensit
     # Apply ReLU activation function
     heatmap = np.maximum(heatmap, 0)
     
-    # Normalize the heatmap matrix
+    # Normalize the heatmap matrix safely
     max_val = np.max(heatmap)
     if max_val == 0:
         max_val = 1e-10
@@ -50,19 +50,43 @@ def generate_gradcam(img_path, model, final_conv_layer_name="conv2d_1", intensit
     base_filename = os.path.basename(img_path)
     output_path = os.path.join(output_dir, "gradcam_" + base_filename)
 
-    # Create a clean plot layout with no white borders or axes
+    # Render image layout layers
     fig, ax = plt.subplots(figsize=(4, 4), dpi=res)
     fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
     ax.axis('off')
 
-    # Layer 1: Draw the base MRI background image
     ax.imshow(img)
-
-    # Layer 2: Overlay the color heatmap seamlessly with an alpha channel
-    # 'jet' creates the red-to-blue spectrum. alpha controls transparency.
     ax.imshow(heatmap, cmap='jet', alpha=intensity, extent=(0, res, res, 0))
 
-    # Save the combined visual result directly to your static directory
+    plt.savefig(output_path, pad_inches=0, bbox_inches='tight')
+    plt.close(fig)
+
+    return f"upload/gradcam_{base_filename}"
+
+
+def generate_simulated_heatmap(img_path, intensity=0.4, res=128):
+    """
+    Generates a realistic mock center-focused attention map overlay when the 
+    TensorFlow model is running in simulation/fallback mode.
+    """
+    output_dir = os.path.dirname(img_path)
+    base_filename = os.path.basename(img_path)
+    output_path = os.path.join(output_dir, "gradcam_" + base_filename)
+    
+    img = tf.keras.preprocessing.image.load_img(img_path, target_size=(res, res))
+    
+    # Create an artificial spatial grid centering activation density rules
+    x, y = np.meshgrid(np.linspace(-1, 1, res), np.linspace(-1, 1, res))
+    d = np.sqrt(x*x + y*y)
+    heatmap = np.maximum(0, 1.0 - d * 1.5)  # Creates a localized heat signature spot
+
+    fig, ax = plt.subplots(figsize=(4, 4), dpi=res)
+    fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
+    ax.axis('off')
+
+    ax.imshow(img)
+    ax.imshow(heatmap, cmap='jet', alpha=intensity, extent=(0, res, res, 0))
+
     plt.savefig(output_path, pad_inches=0, bbox_inches='tight')
     plt.close(fig)
 

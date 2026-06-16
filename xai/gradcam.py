@@ -2,17 +2,14 @@
 import os
 import numpy as np
 import tensorflow as tf
-cv2 = None
-
-try:
-    import cv2
-except ImportError:
-    pass  # Fallback manual pooling logic if OpenCV is not installed on mobile environment
+import matplotlib
+matplotlib.use('Agg')  # Force non-interactive backend so Flask doesn't crash on threads
+import matplotlib.pyplot as plt
 
 def generate_gradcam(img_path, model, final_conv_layer_name="conv2d_1", intensity=0.4, res=128):
     """
-    Computes Gradient-weighted Class Activation Mapping (Grad-CAM) to isolate 
-    and visualize the spatial regions where the convolutional layers focus.
+    Computes Gradient-weighted Class Activation Mapping (Grad-CAM) and
+    blends it with the original image using Matplotlib.
     """
     if model is None:
         raise ValueError("Grad-CAM Engine Error: Target TensorFlow model object is uninitialized.")
@@ -33,63 +30,40 @@ def generate_gradcam(img_path, model, final_conv_layer_name="conv2d_1", intensit
         class_idx = np.argmax(predictions[0])
         loss = predictions[:, class_idx]
 
-    # Calculate the gradients of the target class loss with respect to the feature map activations
     grads = tape.gradient(loss, conv_outputs)
-
-    # 3. Compute Channel-Wise Weights (Global Average Pooling)
     guided_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
 
-    # 4. Generate the Heatmap Matrix
     conv_outputs = conv_outputs[0]
     heatmap = tf.reduce_sum(tf.multiply(guided_grads, conv_outputs), axis=-1)
 
-    # Apply ReLU activation function (keep only positive influences)
+    # Apply ReLU activation function
     heatmap = np.maximum(heatmap, 0)
     
-    # DYNAMIC NORMALIZATION FIX: Ensures lower confidence signals scale cleanly to bright colors
+    # Normalize the heatmap matrix
     max_val = np.max(heatmap)
-    min_val = np.min(heatmap)
-    if max_val - min_val > 0:
-        heatmap = (heatmap - min_val) / (max_val - min_val)
-    else:
-        heatmap = np.zeros_like(heatmap)
+    if max_val == 0:
+        max_val = 1e-10
+    heatmap /= max_val
 
-    # 5. Build and Save the Color Image Output File
+    # 5. Build and Save the Color Image Output File using Matplotlib
     output_dir = os.path.dirname(img_path)
     base_filename = os.path.basename(img_path)
     output_path = os.path.join(output_dir, "gradcam_" + base_filename)
 
-    # Image formatting loop
-    if cv2:
-        img_raw = cv2.imread(img_path)
-        img_raw = cv2.resize(img_raw, (res, res))
-        
-        # CHANNEL FIX: Force grayscale MRI matrices into 3 color channels
-        if len(img_raw.shape) == 2 or img_raw.shape[2] == 1:
-            img_raw = cv2.cvtColor(img_raw, cv2.COLOR_GRAY2BGR)
+    # Create a clean plot layout with no white borders or axes
+    fig, ax = plt.subplots(figsize=(4, 4), dpi=res)
+    fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
+    ax.axis('off')
 
-        heatmap_resized = cv2.resize(heatmap, (res, res))
-        heatmap_uint8 = np.uint8(255 * heatmap_resized)
-        
-        # Color Overlay: Transform single-channel grayscale into a 3-channel Jet color spectrum
-        color_map = cv2.applyColorMap(heatmap_uint8, cv2.COLORMAP_JET)
-        
-        # BLENDING FIX: Set original image weight to 0.6 so the heatmap can actually show through
-        blended_img = cv2.addWeighted(img_raw, 0.6, color_map, intensity, 0)
-        cv2.imwrite(output_path, blended_img)
-    else:
-        # Emergency Pure-Python fallback matrix if OpenCV is missing inside the container terminal
-        from PIL import Image as PILImage
-        from matplotlib import cm
-        
-        img_pil = img.convert("RGB")
-        heatmap_pil = PILImage.fromarray(np.uint8(255 * heatmap)).resize((res, res))
-        heatmap_rgba = np.array(cm.jet(np.array(heatmap_pil)))[:, :, :3] * 255
-        
-        # Manual fallback pixel blend matching the 0.6 / 0.4 weight scale
-        blended_matrix = (np.array(img_pil).astype(float) * 0.6) + (heatmap_rgba * intensity)
-        blended_img = PILImage.fromarray(np.uint8(np.clip(blended_matrix, 0, 255)))
-        blended_img.save(output_path)
+    # Layer 1: Draw the base MRI background image
+    ax.imshow(img)
 
-    # Returns the web-ready string relative path file path format used by the Flask Jinja engine template
+    # Layer 2: Overlay the color heatmap seamlessly with an alpha channel
+    # 'jet' creates the red-to-blue spectrum. alpha controls transparency.
+    ax.imshow(heatmap, cmap='jet', alpha=intensity, extent=(0, res, res, 0))
+
+    # Save the combined visual result directly to your static directory
+    plt.savefig(output_path, pad_inches=0, bbox_inches='tight')
+    plt.close(fig)
+
     return f"upload/gradcam_{base_filename}"

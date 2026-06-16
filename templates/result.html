@@ -11,7 +11,7 @@
     <div class="container">
 
         <div class="logo-container fade">
-            <img src="{{ url_for('static', filename='Images/IMG_20260614_200114.png') }}" alt="NeuroVision AI Logo" class="logo">
+            <img src="/static/Images/IMG_20260614_200114.png" alt="NeuroVision AI Logo" class="logo">
         </div>
 
         <div class="title fade">Analysis Output Summary</div>
@@ -35,19 +35,29 @@
             </h3>
         </div>
 
+        <div class="card fade reasoning-card">
+            <h3>Explainable AI (XAI) Localized Reasoning</h3>
+            <p style="color: rgba(255,255,255,0.8); line-height: 1.6; font-style: italic;">
+                The algorithmic decision path was selected based on the following diagnostic localized markers:
+            </p>
+            <p class="xai-text" style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border-left: 3px solid #00c8ff; color: #ffffff;">
+                {{ xai_reasoning }}
+            </p>
+        </div>
+
         <div class="card fade" style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 20px;">
             <div style="flex: 1; min-width: 250px;">
                 <h4>Submitted MRI Image</h4>
-                <img src="{{ url_for('static', filename=image) }}" alt="Source Scan File" style="max-width: 100%; height: auto; max-height: 300px; border: 2px solid rgba(255,255,255,0.2);">
+                <img src="{{ url_for('static', filename=image) }}" alt="Source Scan" style="max-width: 100%; height: auto; max-height: 300px; border: 2px solid rgba(255,255,255,0.2);">
             </div>
             <div style="flex: 1; min-width: 250px;">
-                <h4>Grad-CAM Target Heatmap</h4>
-                <img src="{{ url_for('static', filename=heatmap_image) }}" alt="AI Visual Localization Map" style="max-width: 100%; height: auto; max-height: 300px; border: 2px solid #00c8ff;">
+                <h4>Grad-CAM Activation Heatmap</h4>
+                <img src="{{ url_for('static', filename=heatmap_image) }}" alt="Colored AI localization overlay" style="max-width: 100%; height: auto; max-height: 300px; border: 2px solid #00c8ff;">
             </div>
         </div>
 
         <br>
-        <div style="display: flex; justify-content: center; gap: 15px;">
+        <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
             <a href="/download_report/{{ image.split('/')[-1] }}" onclick="return confirmDownload();">
                 <button type="button" style="background: #ffffff; color: #000054;">Download PDF Report</button>
             </a>

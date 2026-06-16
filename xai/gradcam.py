@@ -61,7 +61,8 @@ def generate_gradcam(img_path, model, final_conv_layer_name="conv2d_1", intensit
     plt.savefig(output_path, pad_inches=0, bbox_inches='tight')
     plt.close(fig)
 
-    return f"upload/gradcam_{base_filename}"
+    # Returns "upload/gradcam_filename.png" cleanly to Flask
+    return "upload/" + "gradcam_" + base_filename
 
 
 def generate_simulated_heatmap(img_path, intensity=0.4, res=128):
@@ -90,4 +91,5 @@ def generate_simulated_heatmap(img_path, intensity=0.4, res=128):
     plt.savefig(output_path, pad_inches=0, bbox_inches='tight')
     plt.close(fig)
 
-    return f"upload/gradcam_{base_filename}"
+    # Returns "upload/gradcam_filename.png" cleanly to Flask
+    return "upload/" + "gradcam_" + base_filename

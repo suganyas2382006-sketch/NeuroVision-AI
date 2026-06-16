@@ -1,69 +1,47 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeuroVision AI - Analysis Results</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
-</head>
-<body>
-    <div class="container">
-
+<div class="container">
+    <div class="left-panel">
         <div class="logo-container fade">
             <img src="/static/Images/IMG_20260614_200114.png" alt="NeuroVision AI Logo" class="logo">
         </div>
-
         <div class="title fade">Analysis Output Summary</div>
         <div class="subtitle fade">NeuroVision diagnostic identification details</div>
 
         <div class="card fade">
             <h2>Classification Result: <span style="color: #00c8ff;">{{ prediction }}</span></h2>
             <h3>System Confidence: <span style="color: #00c8ff;">{{ confidence }}%</span></h3>
-            
-            <hr style="border-color: rgba(255,255,255,0.1); margin: 15px 0;">
-            
+            <hr class="card-divider">
             <h3>Calculated Severity: <span style="color: #ffcc00;">{{ severity }}</span></h3>
             <h3>Risk Assessment Class: 
-                {% if risk == 'Critical' %}
-                    <span style="color: #ff3333; font-weight: bold;">CRITICAL ALERT</span>
-                {% elif risk == 'Moderate' %}
-                    <span style="color: #ffaa00; font-weight: bold;">MODERATE MONITORING</span>
-                {% else %}
-                    <span style="color: #33cc33; font-weight: bold;">LOW RISK BASELINE</span>
-                {% endif %}
+                {% if risk == 'Critical' %} <span style="color: #ff3333; font-weight: bold;">CRITICAL ALERT</span>
+                {% elif risk == 'Moderate' %} <span style="color: #ffaa00; font-weight: bold;">MODERATE MONITORING</span>
+                {% else %} <span style="color: #33cc33; font-weight: bold;">LOW RISK BASELINE</span> {% endif %}
             </h3>
         </div>
+    </div>
 
-        <div class="card fade" style="border-left: 4px solid #00c8ff;">
+    <div class="right-panel">
+        <div class="card fade xai-card">
             <h3>Explainable AI (XAI) Localized Reasoning</h3>
-            <p style="color: rgba(255,255,255,0.7); font-style: italic; font-size: 0.9rem;">
-                The algorithmic decision path was selected based on the following diagnostic localized markers:
-            </p>
-            <p style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 6px; line-height: 1.5; margin: 5px 0 0 0;">
-                {{ xai_reasoning }}
-            </p>
+            <p style="color: rgba(255,255,255,0.7); font-style: italic; font-size: 0.9rem; margin-bottom: 10px;">The algorithmic decision path was selected based on the following diagnostic localized markers:</p>
+            <p style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 6px; line-height: 1.5; margin: 0;">{{ xai_reasoning }}</p>
         </div>
 
-        <div class="card fade" style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 20px;">
-            <div style="flex: 1; min-width: 250px;">
+        <div class="card fade comparison-grid">
+            <div class="grid-column">
                 <h4>Submitted MRI Image</h4>
-                <img src="{{ url_for('static', filename=image) }}" alt="Source Scan" style="max-width: 100%; height: auto; max-height: 300px; border: 2px solid rgba(255,255,255,0.2);">
+                <img src="{{ url_for('static', filename=image) }}" alt="Source Scan" class="scan-img mri-source">
             </div>
-            <div style="flex: 1; min-width: 250px;">
+            <div class="grid-column">
                 <h4>Grad-CAM Activation Heatmap</h4>
-                <img src="{{ url_for('static', filename=heatmap_image) }}" alt="AI Localization Map" style="max-width: 100%; height: auto; max-height: 300px; border: 2px solid #00c8ff;">
+                <img src="{{ url_for('static', filename=heatmap_image) }}" alt="AI Localization Map" class="scan-img heatmap-output">
             </div>
         </div>
 
-        <br>
-        <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 30px;">
+        <div class="actions-row fade">
             <a href="/download_report/{{ image.split('/')[-1] }}" onclick="return confirmDownload();">
-                <button type="button" style="background: #ffffff; color: #000054; font-weight: bold;">Download PDF Report</button>
+                <button type="button" class="btn-pdf">Download PDF Report</button>
             </a>
             <a href="/"><button type="button">Process Another Scan</button></a>
         </div>
-
     </div>
-</body>
-</html>
+</div>

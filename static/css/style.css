@@ -37,6 +37,19 @@ body {
   transform: translateY(-5px);
 }
 
+.logo-container {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+/* Strict 1cm display footprint rule for browser UI layout wrappers */
+.logo {
+  width: 1cm;
+  height: 1cm;
+  object-fit: contain;
+}
+
 button {
   background: #00c8ff;
   color: black;

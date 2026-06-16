@@ -1,9 +1,0 @@
-Flask
-tensorflow
-numpy
-opencv-python
-Pillow
-matplotlib
-scikit-learn
-pandas
-reportlab

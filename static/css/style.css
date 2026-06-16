@@ -1,43 +1,147 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeuroVision AI - Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
-</head>
-<body>
-    <div class="container">
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; /* Clean, modern font stack */
+  background: radial-gradient(circle at center, #00106a 0%, #000028 100%); /* Deep gradient for premium AI feel */
+  color: #ffffff;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-x: hidden;
+  animation: fadeIn 0.6s ease-in;
+}
 
-        <div class="logo-container fade">
-            <img src="/static/Images/IMG_20260614_200114.png" alt="NeuroVision AI Logo" class="logo">
-        </div>
+.container {
+  width: 100%;
+  max-width: 540px; /* Reduced to keep the UI tight and focused */
+  padding: 40px 20px;
+  text-align: center;
+  box-sizing: border-box;
+  animation: slideUp 0.6s ease;
+}
 
-        <h1 class="title fade">NeuroVision AI</h1>
-        <p class="subtitle fade">Brain Tumor Detection & Explainable AI Engine</p>
+.logo-container {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+}
 
-        <div class="card fade">
-            <h3>Upload MRI Scan</h3>
-            
-            <form action="/upload" method="POST" enctype="multipart/form-data">
-                
-                <div class="upload-zone">
-                    <label for="mriFile" class="custom-file-upload">
-                        <span class="upload-icon">📁</span>
-                        <span id="file-label-text">Choose MRI Image or Drag here</span>
-                    </label>
-                    <input type="file" name="image" id="mriFile" accept="image/*" onchange="previewImage(event)" required>
-                </div>
+/* Strict 1cm display footprint rule for browser UI layout wrappers */
+.logo {
+  width: 1cm;
+  height: 1cm;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(0, 200, 255, 0.6)); /* Subtle glow */
+}
 
-                <div class="preview-container">
-                    <img id="preview" src="#" alt="MRI Preview" style="display: none; max-width: 100%; max-height: 300px; margin: 0 auto; border: 2px solid #00c8ff;">
-                </div>
-                
-                <button type="submit">Analyze Scan</button>
-            </form>
-        </div>
+.title {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin: 0 0 8px 0;
+  background: linear-gradient(135deg, #ffffff 0%, #a5d8ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
 
-    </div>
-</body>
-</html>
+.subtitle {
+  font-size: 14px;
+  color: #8fa0dd; /* Softer, thematic blue-gray */
+  margin: 0 0 35px 0;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px); /* Premium glassmorphism effect */
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 40px 30px;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(0, 200, 255, 0.3);
+}
+
+/* Label styling to fix the default file upload appearance */
+.card p {
+  font-size: 16px;
+  font-weight: 500;
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #e2e8f0;
+}
+
+/* Optional tweak for your file input layout inside the card */
+input[type="file"] {
+  display: block;
+  margin: 0 auto 25px auto;
+  color: #a0aec0;
+  font-size: 14px;
+}
+
+button {
+  background: #00c8ff;
+  color: #000028;
+  border: none;
+  padding: 12px 28px;
+  font-size: 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  box-shadow: 0 4px 15px rgba(0, 200, 255, 0.3);
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  transform: scale(1.03);
+  background: #33d6ff;
+  box-shadow: 0 6px 20px rgba(0, 200, 255, 0.5);
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+img {
+  border-radius: 10px;
+  margin-top: 20px;
+  animation: pop 0.5s ease;
+}
+
+/* --- Animation keyframes remain unchanged for functionality --- */
+.fade {
+  opacity: 0;
+  animation: fadeText 0.5s forwards;
+}
+.fade:nth-child(1) { animation-delay: 0.1s; }
+.fade:nth-child(2) { animation-delay: 0.2s; }
+.fade:nth-child(3) { animation-delay: 0.3s; }
+.fade:nth-child(4) { animation-delay: 0.4s; }
+
+.scanning {
+  position: relative;
+  overflow: hidden;
+}
+.scanning::after {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: -100%;
+  left: 0;
+  background: linear-gradient(to bottom, transparent, rgba(0,200,255,0.2), transparent);
+  animation: scan 2s infinite linear;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes fadeText { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scan { 0% { top: -100%; } 100% { top: 100%; } }

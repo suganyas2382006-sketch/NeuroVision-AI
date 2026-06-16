@@ -5,7 +5,8 @@ import tensorflow as tf
 
 def generate_gradcam(image_path, model, final_conv_layer_name="conv2d_last"):
     """
-    Computes a deep-learning Grad-CAM heatmap visualization matrix for brain MRI arrays.
+    Generates gradient-weighted feature map matrices over top activation layers 
+    to output an interpretive localization thermal focus overlay image on disk.
     """
     img = tf.keras.preprocessing.image.load_img(image_path, target_size=(128, 128))
     img_array = tf.keras.preprocessing.image.img_to_array(img) / 255.0

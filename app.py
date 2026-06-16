@@ -5,7 +5,7 @@ from PIL import Image
 from flask import Flask, redirect, render_template, request, url_for, send_file
 from xai.gradcam import generate_gradcam
 from severity.pdf_generator import generate_pdf_report
-from severity.logic import calculate_severity
+from severity.severity_analysis import calculate_severity  # Linked to your file
 
 app = Flask(__name__)
 
@@ -57,18 +57,18 @@ def upload():
         result = labels[class_index]
         confidence = round(float(np.max(prediction)) * 100, 2)
     else:
-        # Static trace simulation numbers if testing without model file present
+        # Static fallback parameters if model isn't found locally
         result = "Glioma"
         confidence = 94.25
 
-    # Run custom logical staging module rulesets
+    # Run your severity logic calculations
     severity_grade, risk_level = calculate_severity(result, confidence)
 
     try:
-        # Note: Swap out 'conv2d_last' with your architecture's precise last conv layer tag string if needed
+        # Note: Change 'conv2d_last' to match your model's exact final conv layer name if it throws an error
         heatmap_web_path = generate_gradcam(filepath, model, final_conv_layer_name="conv2d_last")
     except Exception as e:
-        print(f"Grad-CAM execution exception fallback initiated. Parameter: {e}")
+        print(f"Grad-CAM error fallback activated: {e}")
         heatmap_web_path = f"upload/{file.filename}"
 
     return render_template(
@@ -104,9 +104,14 @@ def download_report(filename):
     pdf_output_path = os.path.join(app.config["UPLOAD_FOLDER"], pdf_filename)
     
     generate_pdf_report(
-        filename=pdf_output_path, prediction=result_text, confidence=confidence_score,
-        severity=severity_grade, risk=risk_level,
-        original_img_path=source_image_path, heatmap_img_path=heatmap_image_path, logo_path=logo_path
+        filename=pdf_output_path, 
+        prediction=result_text, 
+        confidence=confidence_score,
+        severity=severity_grade, 
+        risk=risk_level,
+        original_img_path=source_image_path, 
+        heatmap_img_path=heatmap_image_path, 
+        logo_path=logo_path
     )
     
     return send_file(pdf_output_path, as_attachment=True)

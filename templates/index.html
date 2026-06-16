@@ -1,30 +1,25 @@
 <div class="container">
 
-  <div class="logo-container">
-      <img src="{{ url_for('static', filename='logo.png') }}"
-           alt="NeuroVision AI Logo"
-           class="logo">
-  </div>
+    <div class="logo-container">
+        <img src="{{ url_for('static', filename='Images/IMG_20260614_200114.png') }}" alt="NeuroVision AI Logo" class="logo">
+    </div>
 
-  <div class="title">NeuroVision AI</div>
-  <div class="subtitle">Brain Tumor Detection & Severity Analysis</div>
+    <div class="title">NeuroVision AI</div>
+    <div class="subtitle">Brain Tumor Detection & Severity Analysis</div>
 
-  <div class="card scanning">
+    <div class="card scanning">
+        <h3>Upload MRI Scan</h3>
+        <form action="/upload" method="POST" enctype="multipart/form-data">
+            <input type="file" name="image" required>
+            <br><br>
+            <button type="submit">Analyze</button>
+        </form>
+    </div>
 
-    <h3>Upload MRI Scan</h3>
-
-    <form action="/upload" method="POST" enctype="multipart/form-data">
-      <input type="file" name="image" required>
-      <br><br>
-      <button type="submit">Analyze</button>
-    </form>
-
-  </div>
-
-  <div class="card">
-    <h3>Tools</h3>
-    <a href="/heatmap"><button>Heatmap</button></a>
-    <a href="/xai"><button>XAI</button></a>
-  </div>
+    <div class="card">
+        <h3>Tools</h3>
+        <a href="/heatmap"><button>Heatmap</button></a>
+        <a href="/xai"><button>XAI</button></a>
+    </div>
 
 </div>

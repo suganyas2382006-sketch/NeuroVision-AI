@@ -6,7 +6,7 @@ AI-powered web application for MRI analysis.
 - Tumor Detection
 - Tumor Classification
 - Severity Analysis
-- Explainable AI
+- Explainable AI heatmap
 - PDF Report Generation
 
 ## Technologies

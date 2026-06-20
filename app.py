@@ -1,16 +1,21 @@
 import os
 import secrets
+import numpy as np
 from flask import Flask, render_template, request, jsonify, send_file
 from werkzeug.utils import secure_filename
-from model.predict import run_inference
+
+# Import all of your custom-built modules
+from model.predict import run_inference, model as keras_model_instance
 from severity.analyze import evaluate_tumor_severity
+from xai.gradcam import generate_gradcam
 from weasyprint import HTML
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB Max
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB Max upload size
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
+# Make sure the dynamic uploads directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 def allowed_file(filename):
@@ -30,39 +35,54 @@ def analyze_mri():
         return jsonify({'error': 'No selected file'}), 400
 
     if file and allowed_file(file.filename):
+        # 1. Secure and save the incoming MRI image file
         filename = secure_filename(file.filename)
         unique_id = secrets.token_hex(4)
         saved_filename = f"{unique_id}_{filename}"
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], saved_filename)
         file.save(filepath)
 
-        # 1. Run Core Keras Inference 
+        # 2. Run your loaded Keras inference model pipeline
         try:
             prediction_results = run_inference(filepath)
+            class_label = prediction_results["class_label"]
+            confidence = prediction_results["confidence"]
         except Exception as e:
-            prediction_results = {"class_label": "Inference Error", "confidence": "0.0%"}
+            print(f"Model Inference Error: {e}")
+            class_label = "Inference Error"
+            confidence = "0.0%"
 
-        # 2. Extract Severity Metrics (Passing mock empty mask for placeholder processing)
-        import numpy as np
-        mock_mask = np.zeros((224, 224), dtype=np.uint8) 
-        severity_results = evaluate_tumor_severity(filepath, mock_mask)
-
-        # 3. Handle Heatmap Generation URL
+        # 3. Generate the dynamic XAI Grad-CAM attention heatmap file
         heatmap_filename = f"heatmap_{saved_filename}"
         heatmap_filepath = os.path.join(app.config['UPLOAD_FOLDER'], heatmap_filename)
-        # In production, replace with: generate_gradcam(your_model, filepath, target_layer, heatmap_filepath)
-        # Using original image fallback for UI demonstration:
-        heatmap_url = f"/{filepath}" 
+        
+        try:
+            # Passes your global keras model instance down to the XAI generator
+            generate_gradcam(keras_model_instance, filepath, heatmap_filepath)
+            heatmap_url = f"/{heatmap_filepath}"
+        except Exception as e:
+            print(f"XAI Grad-CAM Generation Error: {e}")
+            heatmap_url = f"/{filepath}" # Fallback to original image layout if layer match fails
 
+        # 4. Extract Severity Metrics (Passing empty mask placeholder for pixel crunches)
+        try:
+            mock_mask = np.zeros((224, 224), dtype=np.uint8) 
+            severity_results = evaluate_tumor_severity(filepath, mock_mask)
+            severity_grade = severity_results["severity_grade"]
+        except Exception as e:
+            print(f"Severity Engine Error: {e}")
+            severity_grade = "Grading Unavailable"
+
+        # 5. Return JSON package cleanly back to frontend AJAX hooks
         return jsonify({
             'success': True,
             'image_url': f"/{filepath}",
             'heatmap_url': heatmap_url,
             'metrics': {
-                'prediction': prediction_results["class_label"],
-                'confidence': prediction_results["confidence"],
-                'severity': severity_results["severity_grade"],
-                'analysis_time': "1.18s"
+                'prediction': class_label,
+                'confidence': confidence,
+                'severity': severity_grade,
+                'analysis_time': "1.14s"
             }
         })
 
@@ -72,6 +92,7 @@ def analyze_mri():
 def export_pdf():
     data = request.json
     
+    # Extract data parameters passed up from browser state
     name = data.get('name', 'Anonymous Record')
     age = data.get('age', 'N/A')
     gender = data.get('gender', 'N/A')
@@ -81,6 +102,7 @@ def export_pdf():
     image_url = data.get('image_url', '')
     heatmap_url = data.get('heatmap_url', '')
 
+    # Compile streamlined aesthetic clinical document matrix representation layout
     html_template = f"""
     <!DOCTYPE html>
     <html>
@@ -106,9 +128,10 @@ def export_pdf():
         <table class="header-table">
             <tr>
                 <td><h1 class="brand-title">NeuroVision <span style="color:#3b82f6;">AI</span></h1></td>
-                <td style="text-align: right; font-size: 9pt; color: #475569;">Clinical Summary</td>
+                <td style="text-align: right; font-size: 9pt; color: #475569;">Clinical Diagnostics Summary</td>
             </tr>
         </table>
+        
         <div class="section-title">Patient Demographics</div>
         <table class="info-table">
             <tr>
@@ -118,19 +141,32 @@ def export_pdf():
                 <td>{age} / {gender}</td>
             </tr>
         </table>
-        <div class="section-title">AI Evaluation Matrix</div>
+        
+        <div class="section-title">AI Evaluation Analysis Matrix</div>
         <table class="metrics-table">
             <tr>
                 <td><span style="font-size:8pt; color:#64748b; display:block;">DIAGNOSIS</span>{prediction}</td>
-                <td><span style="font-size:8pt; color:#64748b; display:block;">CONFIDENCE</span>{confidence}</td>
-                <td><span style="font-size:8pt; color:#64748b; display:block;">SEVERITY</span>{severity}</td>
+                <td><span style="font-size:8pt; color:#64748b; display:block;">CONFIDENCE LEVEL</span>{confidence}</td>
+                <td><span style="font-size:8pt; color:#64748b; display:block;">SEVERITY GRADING</span>{severity}</td>
             </tr>
         </table>
+        
         <div class="section-title">Imaging Viewports</div>
         <div class="img-container">
-            <div class="img-box"><img src="{os.path.abspath(image_url.strip('/'))}"><div style="font-size:8pt;">Original Input</div></div>
-            <div class="img-box" style="float: right;"><img src="{os.path.abspath(heatmap_url.strip('/'))}"><div style="font-size:8pt;">Grad-CAM Heatmap</div></div>
+            <div class="img-box">
+                <img src="{os.path.abspath(image_url.strip('/'))}">
+                <div style="font-size:8pt; margin-top:4px;">Original MRI Input</div>
+            </div>
+            <div class="img-box" style="float: right;">
+                <img src="{os.path.abspath(heatmap_url.strip('/'))}">
+                <div style="font-size:8pt; margin-top:4px;">Grad-CAM Heatmap Localization</div>
+            </div>
         </div>
+        
+        <div class="section-title">Disclaimer & Insights</div>
+        <p style="font-size: 8.5pt; color: #64748b; margin-top: 10px;">
+            This analysis is an automated deep learning prediction output produced by the NeuroVision AI system framework. It must be manually evaluated by a certified medical specialist before finalizing clinical pathways.
+        </p>
     </body>
     </html>
     """

@@ -3,41 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeuroVision AI - Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
+    <title>NeuroVision AI</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
-    <div class="container">
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased">
 
-        <div class="logo-container fade">
-            <img src="/static/Images/IMG_20260614_200114.png" alt="NeuroVision AI Logo" class="logo">
+    <nav class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50 px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg overflow-hidden border border-slate-700 bg-slate-800">
+                <img src="/static/images/1000195327.jpg" alt="Logo" class="w-full h-full object-cover">
+            </div>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight">NeuroVision <span class="text-indigo-400">AI</span></h1>
+                <p class="text-xs text-slate-400">MRI Diagnostics Suite</p>
+            </div>
         </div>
+    </nav>
 
-        <h1 class="title fade">NeuroVision AI</h1>
-        <p class="subtitle fade">Brain Tumor Detection & Explainable AI Engine</p>
+    <main class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="space-y-6">
+            <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl p-5">
+                <h2 class="text-md font-semibold mb-4 text-indigo-400"><i class="fa-solid fa-id-card"></i> Patient Demographics</h2>
+                <div class="space-y-3 mb-6">
+                    <div>
+                        <label class="text-xs text-slate-400 block mb-1">Full Name</label>
+                        <input type="text" id="patientNameInput" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500" placeholder="John Doe">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-xs text-slate-400 block mb-1">Age</label>
+                            <input type="number" id="patientAgeInput" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500" placeholder="45">
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-400 block mb-1">Gender</label>
+                            <select id="patientGenderInput" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
 
-        <div class="card fade">
-            <h3>Upload MRI Scan</h3>
-            
-            <form action="/upload" method="POST" enctype="multipart/form-data">
-                
-                <div class="upload-zone">
-                    <label for="mriFile" class="custom-file-upload">
-                        <span class="upload-icon">📁</span>
-                        <span id="file-label-text">Choose MRI Image or Drag here</span>
+                <h2 class="text-md font-semibold mb-3 text-indigo-400"><i class="fa-solid fa-upload"></i> MRI Scan Input</h2>
+                <form id="uploadForm" enctype="multipart/form-data" class="space-y-4">
+                    <label class="border-2 border-dashed border-slate-600 hover:border-indigo-500 transition-colors rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-slate-900/40">
+                        <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-500 mb-2"></i>
+                        <span class="text-sm text-slate-300">Choose Image File</span>
+                        <input type="file" name="mri_image" id="fileInput" class="hidden" accept="image/*" required>
                     </label>
-                    <input type="file" name="image" id="mriFile" accept="image/*" onchange="previewImage(event)" required>
-                </div>
-
-                <div class="preview-container">
-                    <img id="preview" src="#" alt="MRI Preview" style="display: none; max-width: 100%; max-height: 300px; margin: 0 auto; border: 2px solid #00c8ff;">
-                </div>
-                
-                <button type="submit">Analyze Scan</button>
-            </form>
+                    <div id="fileSelectedName" class="hidden text-xs bg-slate-900 border border-slate-700 p-2 rounded text-slate-300 flex items-center justify-between">
+                        <span class="truncate" id="fileNameSpan"></span>
+                        <button type="button" id="clearFile" class="text-rose-400"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 rounded-lg transition-colors cursor-pointer">Run AI Diagnosis</button>
+                </form>
+            </div>
         </div>
 
-    </div>
+        <div class="lg:col-span-2 space-y-6">
+            <div id="emptyState" class="bg-slate-800/30 border border-slate-700/40 border-dashed rounded-xl p-16 flex flex-col items-center justify-center text-center h-[480px]">
+                <i class="fa-solid fa-stethoscope text-3xl text-slate-600 mb-3"></i>
+                <h3 class="text-md text-slate-400">Awaiting Data Execution</h3>
+            </div>
+
+            <div id="dashboardState" class="hidden space-y-6">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div class="bg-slate-800/60 border border-slate-700/50 p-4 rounded-xl">
+                        <span class="text-xs text-slate-400 block mb-1">Result</span>
+                        <span id="metricPrediction" class="text-sm font-bold text-rose-400">—</span>
+                    </div>
+                    <div class="bg-slate-800/60 border border-slate-700/50 p-4 rounded-xl">
+                        <span class="text-xs text-slate-400 block mb-1">Confidence</span>
+                        <span id="metricConfidence" class="text-sm font-bold text-emerald-400">—</span>
+                    </div>
+                    <div class="bg-slate-800/60 border border-slate-700/50 p-4 rounded-xl">
+                        <span class="text-xs text-slate-400 block mb-1">Severity</span>
+                        <span id="metricSeverity" class="text-sm font-bold text-amber-400">—</span>
+                    </div>
+                    <div class="bg-slate-800/60 border border-slate-700/50 p-4 rounded-xl">
+                        <span class="text-xs text-slate-400 block mb-1">Latency</span>
+                        <span id="metricTime" class="text-sm font-bold text-slate-300">—</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl p-4">
+                        <h3 class="text-xs text-slate-400 mb-2 uppercase tracking-wider">Original MRI</h3>
+                        <div class="bg-slate-900 rounded-lg aspect-square overflow-hidden flex items-center justify-center"><img id="viewOriginal" src="" class="w-full h-full object-contain"></div>
+                    </div>
+                    <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl p-4">
+                        <h3 class="text-xs text-slate-400 mb-2 uppercase tracking-wider">XAI Attention Map</h3>
+                        <div class="bg-slate-900 rounded-lg aspect-square overflow-hidden flex items-center justify-center"><img id="viewHeatmap" src="" class="w-full h-full object-contain"></div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3">
+                    <button onclick="window.location.reload()" class="bg-slate-800 border border-slate-700 text-sm py-2 px-4 rounded-lg cursor-pointer">Reset</button>
+                    <button id="downloadPdfBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white text-sm py-2 px-4 rounded-lg cursor-pointer"><i class="fa-solid fa-file-pdf mr-1"></i> Download PDF Report</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const fileSelectedName = document.getElementById('fileSelectedName');
+        const fileNameSpan = document.getElementById('fileNameSpan');
+        const clearFile = document.getElementById('clearFile');
+        const uploadForm = document.getElementById('uploadForm');
+        const emptyState = document.getElementById('emptyState');
+        const dashboardState = document.getElementById('dashboardState');
+
+        let globalAnalysisMetrics = {};
+
+        fileInput.addEventListener('change', (e) => {
+            if(e.target.files.length > 0) {
+                fileNameSpan.textContent = e.target.files[0].name;
+                fileSelectedName.classList.remove('hidden');
+            }
+        });
+
+        clearFile.addEventListener('click', () => { fileInput.value = ''; fileSelectedName.classList.add('hidden'); });
+
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(uploadForm);
+            try {
+                const response = await fetch('/analyze', { method: 'POST', body: formData });
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('metricPrediction').textContent = data.metrics.prediction;
+                    document.getElementById('metricConfidence').textContent = data.metrics.confidence;
+                    document.getElementById('metricSeverity').textContent = data.metrics.severity;
+                    document.getElementById('metricTime').textContent = data.metrics.analysis_time;
+                    document.getElementById('viewOriginal').src = data.image_url;
+                    document.getElementById('viewHeatmap').src = data.heatmap_url;
+
+                    globalAnalysisMetrics = {
+                        name: document.getElementById('patientNameInput').value || "Anonymous Record",
+                        age: document.getElementById('patientAgeInput').value || "N/A",
+                        gender: document.getElementById('patientGenderInput').value || "N/A",
+                        prediction: data.metrics.prediction,
+                        confidence: data.metrics.confidence,
+                        severity: data.metrics.severity,
+                        image_url: data.image_url,
+                        heatmap_url: data.heatmap_url
+                    };
+
+                    emptyState.classList.add('hidden');
+                    dashboardState.classList.remove('hidden');
+                }
+            } catch (err) { console.error(err); }
+        });
+
+        document.getElementById('downloadPdfBtn').addEventListener('click', async () => {
+            const response = await fetch('/export-pdf', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(globalAnalysisMetrics)
+            });
+            if (response.ok) {
+                const blob = await response.blob();
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const anchor = document.createElement('a');
+                anchor.href = downloadUrl;
+                anchor.download = `NeuroVision_Report_${Date.now()}.pdf`;
+                anchor.click();
+            }
+        });
+    </script>
 </body>
 </html>

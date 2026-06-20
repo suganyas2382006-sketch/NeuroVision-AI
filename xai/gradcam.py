@@ -1,102 +1,71 @@
-# xai/gradcam.py
 import os
+import cv2
 import numpy as np
 import tensorflow as tf
-import matplotlib
-matplotlib.use('Agg')  # Force non-interactive backend so Flask doesn't crash on threads
-import matplotlib.pyplot as plt
 
-def generate_gradcam(img_path, model, final_conv_layer_name=None, intensity=0.4, res=128):
+def generate_gradcam(model, img_path, output_path, layer_name=None):
     """
-    Computes Gradient-weighted Class Activation Mapping (Grad-CAM) and
-    blends it with the original image using Matplotlib. Automatically 
-    detects the final convolutional layer if none is specified.
+    Generates a Grad-CAM heatmap overlay for a Keras model.
+    
+    :param model: The loaded Keras .h5 model instance
+    :param img_path: Path to the uploaded raw MRI scan
+    :param output_path: Destination path to save the blended heatmap image
+    :param layer_name: Name of the final convolutional layer (auto-detected if None)
     """
-    if model is None:
-        raise ValueError("Grad-CAM Engine Error: Target TensorFlow model object is uninitialized.")
+    # 1. Load and preprocess image to match model expectations
+    img = cv2.imread(img_path)
+    # Adjust target_size if your model doesn't use 224x224
+    img_resized = cv2.resize(img, (224, 224))
+    img_tensor = np.expand_dims(img_resized, axis=0) / 255.0
 
-    # AUTOMATIC LAYER DETECTION: Finds the last convolutional layer if name isn't a perfect match
-    if final_conv_layer_name is None or not any(l.name == final_conv_layer_name for l in model.layers):
-        conv_layers = [layer.name for layer in model.layers if "conv" in layer.name.lower()]
-        if not conv_layers:
-            raise ValueError("Grad-CAM Engine Error: No convolutional layers detected in this model architecture.")
-        final_conv_layer_name = conv_layers[-1]  # Safely grabs the very last conv layer found
+    # 2. Automatically locate the last convolutional layer if not provided
+    if layer_name is None:
+        for layer in reversed(model.layers):
+            if isinstance(layer, (tf.keras.layers.Conv2D, tf.keras.layers.DepthwiseConv2D)) or 'conv' in layer.name.lower():
+                layer_name = layer.name
+                break
+    
+    if not layer_name:
+        raise ValueError("Could not automatically locate a convolutional layer in the model.")
 
-    # 1. Image Preprocessing Pipelines
-    img = tf.keras.preprocessing.image.load_img(img_path, target_size=(res, res))
-    img_array = tf.keras.preprocessing.image.img_to_array(img)
-    img_tensor = np.expand_dims(img_array, axis=0) / 255.0
-
-    # 2. Extract Gradients via GradientTape Framework
+    # 3. Create a sub-model that maps the input image to the activations of the target conv layer
+    # as well as the final model output prediction score
     grad_model = tf.keras.models.Model(
-        [model.inputs], 
-        [model.get_layer(final_conv_layer_name).output, model.output]
+        inputs=[model.inputs],
+        outputs=[model.get_layer(layer_name).output, model.output]
     )
 
+    # 4. Compute the gradients of the top predicted class with respect to the conv layer activations
     with tf.GradientTape() as tape:
         conv_outputs, predictions = grad_model(img_tensor)
-        class_idx = np.argmax(predictions[0])
-        loss = predictions[:, class_idx]
+        pred_index = tf.argmax(predictions[0])
+        class_channel = predictions[:, pred_index]
 
-    grads = tape.gradient(loss, conv_outputs)
-    guided_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
+    # Gradients of the target class score w.r.t. the conv layer output feature map
+    grads = tape.gradient(class_channel, conv_outputs)
 
+    # 5. Global average pooling of the gradients to compute feature importance weights
+    pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
+
+    # 6. Weight the channels of the feature map activation by their importance weights
     conv_outputs = conv_outputs[0]
-    heatmap = tf.reduce_sum(tf.multiply(guided_grads, conv_outputs), axis=-1)
+    heatmap = conv_outputs @ pooled_grads[..., tf.newaxis]
+    heatmap = tf.squeeze(heatmap)
 
-    # Apply ReLU activation function
-    heatmap = np.maximum(heatmap, 0)
+    # 7. Apply ReLU to isolate features that positively contribute to the target class decision
+    heatmap = tf.maximum(heatmap, 0) / tf.math.reduce_max(heatmap)
+    heatmap = heatmap.numpy()
+
+    # 8. Upscale the heatmap to match the original MRI image resolution and blend
+    heatmap = cv2.resize(heatmap, (img.shape[1], img.shape[0]))
+    heatmap = np.uint8(255 * heatmap)
     
-    # Normalize the heatmap matrix safely
-    max_val = np.max(heatmap)
-    if max_val == 0:
-        max_val = 1e-10
-    heatmap /= max_val
+    # Apply standard medical jet-colormap overlay
+    color_heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
 
-    # 5. Build and Save the Color Image Output File using Matplotlib
-    output_dir = os.path.dirname(img_path)
-    base_filename = os.path.basename(img_path)
-    output_path = os.path.join(output_dir, "gradcam_" + base_filename)
+    # Blend original image (65%) with the colorized attention map (35%)
+    blended_img = cv2.addWeighted(img, 0.65, color_heatmap, 0.35, 0)
 
-    # Render image layout layers
-    fig, ax = plt.subplots(figsize=(4, 4), dpi=res)
-    fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
-    ax.axis('off')
-
-    ax.imshow(img)
-    ax.imshow(heatmap, cmap='jet', alpha=intensity, extent=(0, res, res, 0))
-
-    plt.savefig(output_path, pad_inches=0, bbox_inches='tight')
-    plt.close(fig)
-
-    # Returns path cleanly to Flask matching your exact directory layout
-    return "upload/" + "gradcam_" + base_filename
-
-
-def generate_simulated_heatmap(img_path, intensity=0.4, res=128):
-    """
-    Generates a realistic mock center-focused attention map overlay when the 
-    TensorFlow model is running in simulation/fallback mode.
-    """
-    output_dir = os.path.dirname(img_path)
-    base_filename = os.path.basename(img_path)
-    output_path = os.path.join(output_dir, "gradcam_" + base_filename)
-    
-    img = tf.keras.preprocessing.image.load_img(img_path, target_size=(res, res))
-    
-    # Create an artificial spatial grid centering activation density rules
-    x, y = np.meshgrid(np.linspace(-1, 1, res), np.linspace(-1, 1, res))
-    d = np.sqrt(x*x + y*y)
-    heatmap = np.maximum(0, 1.0 - d * 1.5)
-
-    fig, ax = plt.subplots(figsize=(4, 4), dpi=res)
-    fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
-    ax.axis('off')
-
-    ax.imshow(img)
-    ax.imshow(heatmap, cmap='jet', alpha=intensity, extent=(0, res, res, 0))
-
-    plt.savefig(output_path, pad_inches=0, bbox_inches='tight')
-    plt.close(fig)
-
-    return "upload/" + "gradcam_" + base_filename
+    # Save finalized visual frame output
+    cv2.imwrite(output_path, blended_img)
+    return output_path

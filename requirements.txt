@@ -2,7 +2,6 @@ Flask==3.0.2
 werkzeug==3.0.1
 numpy==1.26.4
 opencv-python-headless==4.9.0.80
-tensorflow==2.15.0
-h5py==3.10.0
+torch==2.2.1 --index-url https://download.pytorch.org/ml/cpu
+torchvision==0.17.1 --index-url https://download.pytorch.org/ml/cpu
 weasyprint==61.2
-reportlab 

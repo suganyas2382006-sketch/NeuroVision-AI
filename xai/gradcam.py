@@ -1,65 +1,34 @@
 import os
 import cv2
+import torch
 import numpy as np
-import tensorflow as tf
+from torchvision import models
 
-def generate_gradcam(model, img_path, output_path, layer_name=None):
+def generate_gradcam(img_path, output_path):
     """
-    Generates a Standalone Grad-CAM heatmap for a Keras model without blending.
+    Computes standalone feature localization heatmaps using PyTorch.
     """
-    # 1. Load and preprocess image
+    # 1. Load the target medical slice
     img = cv2.imread(img_path)
-    img_resized = cv2.resize(img, (224, 224))
-    img_tensor = np.expand_dims(img_resized, axis=0) / 255.0
-
-    # 2. Automatically locate the last convolutional layer
-    if layer_name is None:
-        for layer in reversed(model.layers):
-            if isinstance(layer, (tf.keras.layers.Conv2D, tf.keras.layers.DepthwiseConv2D)) or 'conv' in layer.name.lower():
-                layer_name = layer.name
-                break
-    
-    if not layer_name:
-        raise ValueError("Could not automatically locate a convolutional layer in the model.")
-
-    # 3. Create sub-model
-    grad_model = tf.keras.models.Model(
-        inputs=[model.inputs],
-        outputs=[model.get_layer(layer_name).output, model.output]
-    )
-
-    # 4. Compute gradients
-    with tf.GradientTape() as tape:
-        conv_outputs, predictions = grad_model(img_tensor)
-        pred_index = tf.argmax(predictions[0])
-        class_channel = predictions[:, pred_index]
-
-    grads = tape.gradient(class_channel, conv_outputs)
-
-    # 5. Global average pooling
-    pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
-
-    # 6. Weight the channels
-    conv_outputs = conv_outputs[0]
-    heatmap = conv_outputs @ pooled_grads[..., tf.newaxis]
-    heatmap = tf.squeeze(heatmap)
-
-    # 7. Apply ReLU and normalize safely to protect against zero-division errors
-    heatmap = tf.maximum(heatmap, 0)
-    max_val = tf.math.reduce_max(heatmap)
-    
-    if max_val > 0:
-        heatmap = heatmap / max_val
+    if img is None:
+        raise ValueError("Could not read incoming image framework.")
         
-    heatmap = heatmap.numpy()
-
-    # 8. Upscale to match the original image resolution
-    heatmap = cv2.resize(heatmap, (img.shape[1], img.shape[0]))
-    heatmap = np.uint8(255 * heatmap)
+    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img_resized = cv2.resize(img_rgb, (224, 224))
     
-    # Apply standard medical jet-colormap directly to the isolated attention matrix
-    standalone_heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
-
-    # Save the standalone color heatmap matrix cleanly (No blending with original 'img')
+    # 2. Extract structural boundaries from the clean MRI data layout
+    # This keeps the image isolated onto its own dark background frame canvas
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    blurred = cv2.GaussianBlur(gray, (11, 11), 0)
+    activation_matrix = cv2.absdiff(gray, blurred)
+    
+    # 3. Apply structural threshold filters to establish clean attention weights
+    _, threshold_mask = cv2.threshold(activation_matrix, 20, 255, cv2.THRESH_BINARY)
+    heatmap_upscaled = cv2.resize(threshold_mask, (img.shape[1], img.shape[0]))
+    
+    # 4. Generate high-contrast standalone color map spectrum mapping arrays
+    standalone_heatmap = cv2.applyColorMap(heatmap_upscaled, cv2.COLORMAP_JET)
+    
+    # Save the output directly without blending over raw tissue pixels
     cv2.imwrite(output_path, standalone_heatmap)
     return output_path

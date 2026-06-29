@@ -103,7 +103,7 @@ def export_pdf():
 
     # Map the exact local system path to your brand logo image
     # CHANGE 'your_logo_filename.png' to match your actual file inside static/Images/
-    logo_path = os.path.abspath(os.path.join('static', 'Images', 'your_logo_filename.png'))
+    logo_path = os.path.abspath(os.path.join('static', 'Images', 'IMG_20260614_200114.png'))
 
     html_template = f"""
     <!DOCTYPE html>

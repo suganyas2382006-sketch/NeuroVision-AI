@@ -54,20 +54,20 @@ def analyze_mri():
             class_label = "Inference Error"
             confidence = "0.0%"
 
-        # 2. XAI Non-Blended Attention Heatmap Generation
+                # 2. XAI Non-Blended Attention Heatmap Generation
         heatmap_filename = f"heatmap_{saved_filename}"
         heatmap_filepath = os.path.join(app.config['UPLOAD_FOLDER'], heatmap_filename)
         
         try:
-            # Note: For Grad-CAM, we still use the fallback architecture if needed
-            from model.predict import model as keras_model_instance
-            generate_gradcam(keras_model_instance, filepath, heatmap_filepath)
+            # Pass the ONNX file path straight to the XAI engine
+            from model.predict import model_path as onnx_path
+            generate_gradcam(onnx_path, filepath, heatmap_filepath)
             heatmap_url = f"/{heatmap_filepath}"
         except Exception as e:
             print(f"[-] Grad-CAM Generation Exception Triggered: {e}")
-            heatmap_url = f"/{filepath}" # Fallback configuration safeguard
+            heatmap_url = f"/{filepath}" # Fallback safeguard
 
-        # 3. Structural Severity Processing Core
+                # 3. Structural Severity Processing Core
         try:
             mock_mask = np.zeros((224, 224), dtype=np.uint8) 
             severity_results = evaluate_tumor_severity(filepath, mock_mask)
@@ -185,3 +185,4 @@ def export_pdf():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+        

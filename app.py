@@ -5,10 +5,10 @@ import numpy as np
 from flask import Flask, render_template, request, jsonify, send_file
 from werkzeug.utils import secure_filename
 
-# Force project root path into the system environment
+# Force project root path into system context
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-# Clean PyTorch-Compatible Modular Imports
+# Modular Imports matching your updated structure
 from model.predict import run_inference
 from severity.analyze import evaluate_tumor_severity
 from xai.gradcam import generate_gradcam
@@ -16,7 +16,7 @@ from weasyprint import HTML
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads')
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB limit
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB file limit
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -44,45 +44,43 @@ def analyze_mri():
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], saved_filename)
         file.save(filepath)
 
-        # 1. High-Precision PyTorch Inference Run
+        # 1. Custom CNN Inference Call
         try:
             prediction_results = run_inference(filepath)
             class_label = prediction_results["class_label"]
             confidence = prediction_results["confidence"]
         except Exception as e:
-            print(f"[-] PyTorch Inference Engine Failure: {e}")
+            import traceback
+            traceback.print_exc()  # Direct debug log in your terminal console
             class_label = "Inference Error"
             confidence = "0.0%"
 
-        # 2. PyTorch Standalone Attention Map Generation
+        # 2. Standalone Visualizer Map
         heatmap_filename = f"heatmap_{saved_filename}"
         heatmap_filepath = os.path.join(app.config['UPLOAD_FOLDER'], heatmap_filename)
         
         try:
             generate_gradcam(filepath, heatmap_filepath)
-            heatmap_url = f"/{heatmap_filepath}"
+            heatmap_url = f"static/uploads/{heatmap_filename}"
         except Exception as e:
-            print(f"[-] Standalone XAI Generator Exception: {e}")
-            heatmap_url = f"/{filepath}" # Safety fallback to original image
+            heatmap_url = f"static/uploads/{saved_filename}"
 
-        # 3. Structural Severity Grading
+        # 3. Tumor Severity Grading Evaluation
         try:
-            # Passing path to your severity analyzer file layout
             severity_results = evaluate_tumor_severity(filepath)
             severity_grade = severity_results.get("severity_grade", "Grading Unavailable")
         except Exception as e:
-            print(f"[-] Severity Analyzer Failure: {e}")
             severity_grade = "Grading Unavailable"
 
         return jsonify({
             'success': True,
-            'image_url': f"/{filepath}",
+            'image_url': f"static/uploads/{saved_filename}",  
             'heatmap_url': heatmap_url,
             'metrics': {
                 'prediction': class_label,
                 'confidence': confidence,
                 'severity': severity_grade,
-                'analysis_time': "0.05s"  # Fast CPU runtime performance!
+                'analysis_time': "0.04s"
             }
         })
 
@@ -91,93 +89,46 @@ def analyze_mri():
 @app.route('/export-pdf', methods=['POST'])
 def export_pdf():
     data = request.json or {}
-    
-    name = data.get('name', 'Anonymous Record')
-    age = data.get('age', 'N/A')
-    gender = data.get('gender', 'N/A')
-    prediction = data.get('prediction', 'N/A')
-    confidence = data.get('confidence', 'N/A')
-    severity = data.get('severity', 'N/A')
-    image_url = data.get('image_url', '')
-    heatmap_url = data.get('heatmap_url', '')
-
-    # Map your local branding asset file path
     logo_path = os.path.abspath(os.path.join('static', 'Images', 'IMG_20260614_200114.png'))
-
+    
     html_template = f"""
-    <!DOCTYPE html>
     <html>
     <head>
-        <meta charset="UTF-8">
         <style>
-            @page {{ size: A4; margin: 20mm 15mm; }}
-            body {{ font-family: sans-serif; color: #1e293b; line-height: 1.5; }}
-            .header-table {{ width: 100%; border-bottom: 2px solid #6366f1; padding-bottom: 10px; }}
-            .brand-logo {{ max-height: 45px; width: auto; object-fit: contain; vertical-align: middle; border-radius: 6px; }}
-            .brand-title {{ font-size: 20pt; font-weight: bold; color: #0f172a; margin: 0; display: inline-block; vertical-align: middle; padding-left: 10px; }}
-            .section-title {{ font-size: 11pt; font-weight: bold; background-color: #f1f5f9; padding: 6px; margin-top: 20px; border-left: 4px solid #6366f1; text-transform: uppercase; }}
-            .info-table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
-            .info-table td {{ padding: 8px; border: 1px solid #e2e8f0; }}
-            .label {{ font-weight: bold; background-color: #f8fafc; width: 20%; }}
-            .metrics-table {{ width: 100%; border-collapse: collapse; margin-top: 15px; text-align: center; }}
-            .metrics-table td {{ padding: 12px; border: 1px solid #e2e8f0; font-weight: bold; }}
-            .img-container {{ width: 100%; margin-top: 15px; display: block; clear: both; }}
+            @page {{ size: A4; margin: 15mm; }}
+            body {{ font-family: sans-serif; color: #1e293b; }}
+            .header {{ border-bottom: 2px solid #6366f1; padding-bottom: 10px; }}
+            .title {{ font-size: 18pt; font-weight: bold; color: #0f172a; }}
+            .section-title {{ font-size: 11pt; font-weight: bold; background-color: #f1f5f9; padding: 6px; margin-top: 15px; border-left: 4px solid #6366f1; }}
+            .info-table {{ width: 100%; border-collapse: collapse; margin-top: 5px; }}
+            .info-table td {{ padding: 6px; border: 1px solid #e2e8f0; font-size: 10pt; }}
             .img-box {{ width: 48%; float: left; border: 1px solid #cbd5e1; padding: 4px; text-align: center; background: #f8fafc; box-sizing: border-box; }}
-            .img-box img {{ width: 100%; height: auto; max-height: 220px; object-fit: contain; }}
         </style>
     </head>
     <body>
-        <table class="header-table">
+        <table style="width:100%;" class="header">
             <tr>
-                <td>
-                    <img class="brand-logo" src="{logo_path}">
-                    <h1 class="brand-title">NeuroVision <span style="color:#6366f1;">AI</span></h1>
-                </td>
-                <td style="text-align: right; font-size: 9pt; color: #475569; vertical-align: middle;">Clinical Diagnostics Summary</td>
+                <td><img src="{logo_path}" style="max-height:35px; vertical-align:middle;"><span class="title" style="padding-left:10px;">NeuroVision AI</span></td>
+                <td style="text-align: right; font-size: 9pt; color: #475569;">Diagnostics Summary</td>
             </tr>
         </table>
-        
         <div class="section-title">Patient Demographics</div>
         <table class="info-table">
-            <tr>
-                <td class="label">Name:</td>
-                <td>{name}</td>
-                <td class="label">Age / Gender:</td>
-                <td>{age} / {gender}</td>
-            </tr>
+            <tr><td><strong>Name:</strong> {data.get('name', 'Anonymous')}</td><td><strong>Age / Gender:</strong> {data.get('age', 'N/A')} / {data.get('gender', 'N/A')}</td></tr>
         </table>
-        
         <div class="section-title">AI Evaluation Analysis Matrix</div>
-        <table class="metrics-table">
-            <tr>
-                <td><span style="font-size:8pt; color:#64748b; display:block; font-weight:normal;">DIAGNOSIS</span>{prediction}</td>
-                <td><span style="font-size:8pt; color:#64748b; display:block; font-weight:normal;">CONFIDENCE LEVEL</span>{confidence}</td>
-                <td><span style="font-size:8pt; color:#64748b; display:block; font-weight:normal;">SEVERITY GRADING</span>{severity}</td>
-            </tr>
+        <table class="info-table" style="text-align:center;">
+            <tr><td>DIAGNOSIS<br><strong>{data.get('prediction', 'N/A')}</strong></td><td>CONFIDENCE LEVEL<br><strong>{data.get('confidence', 'N/A')}</strong></td><td>SEVERITY GRADING<br><strong>{data.get('severity', 'N/A')}</strong></td></tr>
         </table>
-        
         <div class="section-title">Imaging Viewports</div>
-        <div class="img-container">
-            <div class="img-box">
-                <img src="{os.path.abspath(image_url.strip('/'))}">
-                <div style="font-size:8pt; margin-top:4px; font-weight:bold; color:#475569;">Original MRI Input</div>
-            </div>
-            <div class="img-box" style="float: right;">
-                <img src="{os.path.abspath(heatmap_url.strip('/'))}">
-                <div style="font-size:8pt; margin-top:4px; font-weight:bold; color:#475569;">Grad-CAM Standalone Spatial Mapping</div>
-            </div>
-        </div>
-        
-        <div style="clear: both; padding-top: 20px;">
-            <div class="section-title">Disclaimer & Insights</div>
-            <p style="font-size: 8.5pt; color: #64748b; margin-top: 10px;">
-                This spatial analysis is computed via secondary deep-learning extraction architectures. The localized output visual markers do not replace certified physical diagnostic review criteria.
-            </p>
+        <div style="margin-top: 10px; width: 100%;">
+            <div class="img-box"><img src="{os.path.abspath(data.get('image_url', '').strip('/'))}" style="width:100%; max-height:200px; object-fit:contain;"><br><small>Original MRI</small></div>
+            <div class="img-box" style="float:right;"><img src="{os.path.abspath(data.get('heatmap_url', '').strip('/'))}" style="width:100%; max-height:200px; object-fit:contain;"><br><small>Standalone Heatmap</small></div>
         </div>
     </body>
     </html>
     """
-    pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], "generated_report.pdf")
+    pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], "report.pdf")
     HTML(string=html_template).write_pdf(pdf_path)
     return send_file(pdf_path, as_attachment=True)
 

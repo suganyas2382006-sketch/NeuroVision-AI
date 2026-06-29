@@ -159,18 +159,33 @@
         });
 
         document.getElementById('downloadPdfBtn').addEventListener('click', async () => {
-            const response = await fetch('/export-pdf', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(globalAnalysisMetrics)
-            });
-            if (response.ok) {
-                const blob = await response.blob();
-                const downloadUrl = window.URL.createObjectURL(blob);
-                const anchor = document.createElement('a');
-                anchor.href = downloadUrl;
-                anchor.download = `NeuroVision_Report_${Date.now()}.pdf`;
-                anchor.click();
+            try {
+                const response = await fetch('/export-pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(globalAnalysisMetrics)
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const downloadUrl = window.URL.createObjectURL(blob);
+                    
+                    // Explicit container sandbox element mounting bypass
+                    const anchor = document.createElement('a');
+                    anchor.href = downloadUrl;
+                    anchor.download = `NeuroVision_Report_${Date.now()}.pdf`;
+                    
+                    document.body.appendChild(anchor);
+                    anchor.click();
+                    
+                    // Clean memory footprint references cleanly
+                    document.body.removeChild(anchor);
+                    window.URL.revokeObjectURL(downloadUrl);
+                } else {
+                    alert("Server failed to compile the PDF artifact summary layout.");
+                }
+            } catch (err) {
+                console.error("PDF Download Failure Context:", err);
             }
         });
     </script>

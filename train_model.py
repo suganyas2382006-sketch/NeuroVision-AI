@@ -1,17 +1,60 @@
 import os
+import cv2
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import models
 import numpy as np
 
+def load_real_dataset(dataset_path):
+    print(f"[*] Scanning dataset directory: {dataset_path}")
+    categories = ["Glioma", "Meningioma", "Pituitary", "No Tumor"]
+    
+    images = []
+    labels = []
+    
+    for label_idx, category in enumerate(categories):
+        category_path = os.path.join(dataset_path, category)
+        if not os.path.exists(category_path):
+            print(f"[!] Warning: Folder missing: {category_path}")
+            continue
+            
+        for file in os.listdir(category_path):
+            if file.lower().endswith(('png', 'jpg', 'jpeg')):
+                img_path = os.path.join(category_path, file)
+                img = cv2.imread(img_path)
+                if img is None:
+                    continue
+                
+                # Preprocess to match ImageNet standard format
+                img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                img_resized = cv2.resize(img_rgb, (224, 224))
+                img_tensor = img_resized.transpose((2, 0, 1)).astype(np.float32) / 255.0
+                
+                images.append(img_tensor)
+                labels.append(label_idx)
+                
+    if len(images) == 0:
+        raise ValueError("Zero images loaded. Check your dataset folder structure!")
+        
+    return np.array(images), np.array(labels)
+
 def run_high_accuracy_training():
     print("[*] Compiling 90%+ Target Production Pipeline...")
     
-    # 1. Load optimized pre-trained features (File size remains ~9.8 MB)
-    model = models.mobilenet_v3_small(weights=models.MobileNet_V3_Small_Weights.DEFAULT)
+    # 1. Load actual images from your folder structure
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    train_path = os.path.join(base_dir, 'dataset', 'Training')
     
-    # 2. Modify classification head architecture matching the 4 clinical states
+    try:
+        X_train, y_train = load_real_dataset(train_path)
+        print(f"[+] Successfully loaded {X_train.shape[0]} real MRI scans for training.")
+    except Exception as e:
+        print(f"[-] Data Loading Failure: {e}")
+        return
+
+    # 2. Setup Pre-trained MobileNet backbone
+    model = models.mobilenet_v3_small(weights=models.MobileNet_V3_Small_Weights.DEFAULT)
     num_features = model.classifier[0].in_features
     model.classifier = nn.Sequential(
         nn.Linear(num_features, 128),
@@ -20,43 +63,39 @@ def run_high_accuracy_training():
         nn.Linear(128, 4)
     )
     
-    # 3. CRITICAL FOR 90%: Unfreeze deep layers to adapt to medical textures
-    # We leave the first few foundational layers frozen to keep training fast on CPU
+    # Unfreeze deeper layers for medical tuning
     for name, param in model.features.named_parameters():
         if int(name.split('.')[0]) > 4: 
-            param.requires_grad = True # Enable deep structural tuning
+            param.requires_grad = True
         else:
             param.requires_grad = False
 
     criterion = nn.CrossEntropyLoss()
-    
-    # 4. Use an ultra-low learning rate to prevent destroying pre-trained weights
-    optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-5)
+    optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-4)
 
-    # 5. Tensor Matrix Stream (Swap with your true diagnostic validation loaders array loop)
-    mock_images = np.random.rand(4, 3, 224, 224).astype(np.float32)
-    mock_labels = np.array([0, 1, 2, 3])
+    # 3. Actual Training Loop over multiple steps
+    inputs = torch.from_numpy(X_train)
+    targets = torch.from_numpy(y_train).long()
     
-    inputs = torch.from_numpy(mock_images)
-    targets = torch.from_numpy(mock_labels).long()
-
-    # 6. Training inference loop cycle
+    print("[*] Initializing optimization epochs across real weights...")
     model.train()
-    optimizer.zero_grad()
-    outputs = model(inputs)
-    loss = criterion(outputs, targets)
-    loss.backward()
-    optimizer.step()
     
-    print(f"[+] Gradient update locked successfully. Fine-tuning Loss: {loss.item():.4f}")
+    # Run a few basic training loops to settle weights
+    for epoch in range(5):
+        optimizer.zero_grad()
+        outputs = model(inputs)
+        loss = criterion(outputs, targets)
+        loss.backward()
+        optimizer.step()
+        print(f"    -> Epoch {epoch+1}/5 completed. Loss: {loss.item():.4f}")
 
-    # 7. Save the deep-tuned lightweight asset package
-    output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'model')
+    # 4. Save final real trained weights
+    output_dir = os.path.join(base_dir, 'model')
     os.makedirs(output_dir, exist_ok=True)
     save_path = os.path.join(output_dir, 'brain_tumor_model.pth')
     
     torch.save(model.state_dict(), save_path)
-    print(f"[+] High-precision model saved cleanly: {save_path} (~10.2 MB)")
+    print(f"[+] Real-world trained model saved to: {save_path}")
 
 if __name__ == '__main__':
     run_high_accuracy_training()

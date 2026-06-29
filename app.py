@@ -101,8 +101,7 @@ def export_pdf():
     image_url = data.get('image_url', '')
     heatmap_url = data.get('heatmap_url', '')
 
-    # Map the exact local system path to your brand logo image
-    # CHANGE 'your_logo_filename.png' to match your actual file inside static/Images/
+    # Point directly to your designated local branding asset image matching index.html
     logo_path = os.path.abspath(os.path.join('static', 'Images', 'IMG_20260614_200114.png'))
 
     html_template = f"""
@@ -113,10 +112,10 @@ def export_pdf():
         <style>
             @page {{ size: A4; margin: 20mm 15mm; }}
             body {{ font-family: sans-serif; color: #1e293b; line-height: 1.5; }}
-            .header-table {{ width: 100%; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; }}
-            .brand-logo {{ max-height: 45px; width: auto; object-fit: contain; vertical-align: middle; }}
-            .brand-title {{ font-size: 20pt; font-weight: bold; color: #1e3a8a; margin: 0; display: inline-block; vertical-align: middle; padding-left: 10px; }}
-            .section-title {{ font-size: 11pt; font-weight: bold; background-color: #f1f5f9; padding: 6px; margin-top: 20px; border-left: 4px solid #3b82f6; text-transform: uppercase; }}
+            .header-table {{ width: 100%; border-bottom: 2px solid #6366f1; padding-bottom: 10px; }}
+            .brand-logo {{ max-height: 45px; width: auto; object-fit: contain; vertical-align: middle; border-radius: 6px; }}
+            .brand-title {{ font-size: 20pt; font-weight: bold; color: #0f172a; margin: 0; display: inline-block; vertical-align: middle; padding-left: 10px; }}
+            .section-title {{ font-size: 11pt; font-weight: bold; background-color: #f1f5f9; padding: 6px; margin-top: 20px; border-left: 4px solid #6366f1; text-transform: uppercase; }}
             .info-table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
             .info-table td {{ padding: 8px; border: 1px solid #e2e8f0; }}
             .label {{ font-weight: bold; background-color: #f8fafc; width: 20%; }}
@@ -132,7 +131,7 @@ def export_pdf():
             <tr>
                 <td>
                     <img class="brand-logo" src="{logo_path}">
-                    <h1 class="brand-title">NeuroVision <span style="color:#3b82f6;">AI</span></h1>
+                    <h1 class="brand-title">NeuroVision <span style="color:#6366f1;">AI</span></h1>
                 </td>
                 <td style="text-align: right; font-size: 9pt; color: #475569; vertical-align: middle;">Clinical Diagnostics Summary</td>
             </tr>
